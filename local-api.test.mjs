@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { request } from 'node:http';
+import { spawn } from 'node:child_process';
 import { mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -37,6 +38,31 @@ function observation(applicationId, eventId) {
     source_ip: '8.8.8.8', protocol: 'HTTPS' };
 }
 
+function callInChild(socketPath, token, body) {
+  const script = `
+    const http = require('node:http');
+    const [socketPath, token, raw] = process.argv.slice(1);
+    const data = JSON.stringify(JSON.parse(raw));
+    const request = http.request({ socketPath, path: '/v1/observations', method: 'POST',
+      headers: { authorization: 'Bearer ' + token, 'content-type': 'application/json',
+        'content-length': Buffer.byteLength(data) } }, (response) => {
+      let output = '';
+      response.on('data', (chunk) => output += chunk);
+      response.on('end', () => process.stdout.write(JSON.stringify({ status: response.statusCode, body: JSON.parse(output) })));
+    });
+    request.on('error', (error) => { process.stderr.write(error.message); process.exitCode = 1; });
+    request.end(data);
+  `;
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, ['-e', script, socketPath, token, JSON.stringify(body)], { stdio: ['ignore', 'pipe', 'pipe'] });
+    let output = ''; let errors = '';
+    child.stdout.on('data', (chunk) => output += chunk);
+    child.stderr.on('data', (chunk) => errors += chunk);
+    child.on('error', reject);
+    child.on('close', (code) => code === 0 ? resolve(JSON.parse(output)) : reject(new Error(errors || `child exited ${code}`)));
+  });
+}
+
 test('local API scopes two app tokens, separates management, audits release, and binds private socket', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'nodeguard-api-'));
   const socketPath = path.join(dir, 'guard.sock');
@@ -65,7 +91,9 @@ test('local API scopes two app tokens, separates management, audits release, and
     assert.equal(released.body.affected, 1);
     assert.equal(a.isBlocked('8.8.8.8'), false);
     const audit = await call(socketPath, 'GET', '/v1/audit', adminToken);
-    assert.equal(audit.body.entries[0].action, 'release');
+    assert.deepEqual(audit.body.entries.map((entry) => entry.action), ['THROTTLE', 'release']);
+    assert.equal(audit.body.entries[0].policy_id, 'app-a-login');
+    assert.doesNotMatch(JSON.stringify(audit.body), /test-only-bridge-secret|aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/);
     const simulated = await call(socketPath, 'POST', '/v1/policies/simulate', adminToken,
       { policy: a.policy, observations: [observation('app-a', 'event-001'), observation('app-a', 'event-002')], at: new Date(at).toISOString() });
     assert.equal(simulated.status, 200);
@@ -94,6 +122,41 @@ test('local API rejects reused credentials and existing socket paths', async () 
     await assert.rejects(second.start());
     await first.stop();
   } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('two independent client processes cannot submit or release each other\'s application state', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'nodeguard-api-processes-'));
+  const socketPath = path.join(dir, 'guard.sock');
+  const a = guardFor('app-a');
+  const b = guardFor('app-b');
+  const api = createLocalNodeGuardApi({ socketPath, managementToken: adminToken,
+    applications: [{ applicationId: 'app-a', token: appAToken, guard: a },
+      { applicationId: 'app-b', token: appBToken, guard: b }], now: () => at });
+  try {
+    await api.start();
+    assert.equal((await callInChild(socketPath, appAToken, observation('app-b', 'event-001'))).status, 403);
+    const first = await Promise.all([
+      callInChild(socketPath, appAToken, observation('app-a', 'event-001')),
+      callInChild(socketPath, appBToken, observation('app-b', 'event-002')),
+    ]);
+    assert.deepEqual(first.map((entry) => entry.body.action), ['recorded', 'recorded']);
+    const second = await Promise.all([
+      callInChild(socketPath, appAToken, observation('app-a', 'event-003')),
+      callInChild(socketPath, appBToken, observation('app-b', 'event-004')),
+    ]);
+    assert.deepEqual(second.map((entry) => entry.body.action), ['THROTTLE', 'THROTTLE']);
+    assert.equal(a.isBlocked('8.8.8.8'), true);
+    assert.equal(b.isBlocked('8.8.8.8'), true);
+    assert.equal((await call(socketPath, 'POST', '/v1/restrictions/release', appAToken,
+      { application_id: 'app-b', source_ip: '8.8.8.8' })).status, 401);
+    assert.equal((await call(socketPath, 'POST', '/v1/restrictions/release', adminToken,
+      { application_id: 'app-a', source_ip: '8.8.8.8' })).body.affected, 1);
+    assert.equal(a.isBlocked('8.8.8.8'), false);
+    assert.equal(b.isBlocked('8.8.8.8'), true);
+  } finally {
+    await api.stop();
     await rm(dir, { recursive: true, force: true });
   }
 });

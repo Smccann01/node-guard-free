@@ -86,6 +86,20 @@ test("source-scoped IPv6 policy treats equivalent text forms as one verified sou
   assert.equal(guard.isBlocked({ sourceIp: short, routeId: "auth.login" }), false);
 });
 
+test("source-scoped active view honors a newly protected address without deleting its grant", () => {
+  let protectedSource = false;
+  const guard = createIdentityGuardV2({ policy: { ...policy, identity_scope: "source_ip" },
+    now: () => atStart, canActOnSource: () => !protectedSource });
+  guard.record(event("event-001"));
+  guard.record(event("event-002"));
+  assert.equal(guard.snapshot().length, 1);
+  protectedSource = true;
+  assert.equal(guard.isBlocked({ sourceIp: "8.8.8.8", routeId: "auth.login" }), false);
+  assert.deepEqual(guard.snapshot(), []);
+  protectedSource = false;
+  assert.equal(guard.snapshot().length, 1);
+});
+
 test("tenant and API key scopes select the right verified identity and obey source protection", () => {
   for (const [scope, field] of [["tenant_id", "tenantId"], ["api_key_id", "apiKeyId"]]) {
     const guard = createIdentityGuardV2({ policy: { ...policy, identity_scope: scope }, now: () => atStart,

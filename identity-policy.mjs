@@ -197,7 +197,8 @@ export function createIdentityGuardV2({ policy: policyInput, canActOnSource, onD
     const at = now();
     prune(at);
     if (policy.mode !== "ENFORCE") return [];
-    return [...state.entries()].filter(([, entry]) => entry.restrictionUntil > at).map(([key, entry]) => ({
+    return [...state.entries()].filter(([key, entry]) => entry.restrictionUntil > at &&
+      (policy.identity_scope !== "source_ip" || sourceAllowed(key.slice("source_ip:".length)))).map(([key, entry]) => ({
       identity_scope: policy.identity_scope, identity_ref: key, action: policy.action,
       expires_at: new Date(entry.restrictionUntil).toISOString(), policy_id: policy.policy_id,
     }));

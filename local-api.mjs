@@ -77,7 +77,8 @@ export function createLocalNodeGuardApi({ socketPath, applications, managementTo
   let server;
   let socketIdentity;
   function auditAction(action, applicationId, sourceIp, affected) {
-    audit.push(Object.freeze({ at: new Date(now()).toISOString(), action, application_id: applicationId, source_ip: sourceIp, affected }));
+    audit.push(Object.freeze({ at: new Date(now()).toISOString(), action, application_id: applicationId,
+      policy_id: apps.get(applicationId).guard.policy.policy_id, source_ip: sourceIp, affected }));
     if (audit.length > maxAuditEntries) audit.shift();
   }
 
@@ -92,6 +93,7 @@ export function createLocalNodeGuardApi({ socketPath, applications, managementTo
         if (body.application_id !== app[0]) return reply(response, 403, { error: 'application_scope' });
         const result = app[1].guard.record(body);
         if (!result.accepted) return reply(response, 422, { error: result.reason });
+        if (result.action !== 'recorded') auditAction(result.action, app[0], body.source_ip, 1);
         return reply(response, 200, result);
       }
       if (!matches(authorization, managementHash)) return reply(response, 401, { error: 'unauthorized' });
@@ -126,7 +128,7 @@ export function createLocalNodeGuardApi({ socketPath, applications, managementTo
         return reply(response, 200, { results });
       }
       if (pathname === '/v1/audit' && request.method === 'GET') {
-        return reply(response, 200, { entries: [...audit] });
+        return reply(response, 200, { entries: audit.slice(-1000), truncated: audit.length > 1000 });
       }
       return reply(response, 404, { error: 'not_found' });
     } catch (error) {

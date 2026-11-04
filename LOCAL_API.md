@@ -11,7 +11,7 @@ This API is experimental. It accepts v1 source-scoped policy guards only; the v2
 | `GET /v1/restrictions` | Management token | List up to 1,000 active restrictions |
 | `POST /v1/restrictions/release` | Management token | Release one application's source restriction and audit it |
 | `POST /v1/policies/simulate` | Management token | Run the pure v1 simulator without changing live state |
-| `GET /v1/audit` | Management token | Read bounded in-memory release audit entries |
+| `GET /v1/audit` | Management token | Read up to 1,000 recent in-memory decision and release records, with a truncation flag |
 
 All methods return JSON with `Cache-Control: no-store`. Request bodies are capped at 64 KiB. Authentication failures do not reveal whether an application exists.
 
