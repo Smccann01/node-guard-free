@@ -31,7 +31,6 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-          registry-url: 'https://registry.npmjs.org'
           package-manager-cache: false
       - run: npm install --global npm@11.21.1
       - name: Verify release tag and npm version
@@ -43,6 +42,11 @@ jobs:
           git fetch --no-tags origin main
           git merge-base --is-ancestor HEAD origin/main
           npm --version
+          test "$(npm config get registry)" = 'https://registry.npmjs.org/'
+          if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
+            echo 'A static npm token is present; this release must use OIDC only.' >&2
+            exit 1
+          fi
       - run: npm ci
       - run: npm test
       - run: npm run typecheck
