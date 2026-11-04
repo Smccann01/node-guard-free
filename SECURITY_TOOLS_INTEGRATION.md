@@ -1,6 +1,6 @@
 # Node Guard security tools integration candidate
 
-This branch combines the separate Security Replay, Policy Studio, and Webhook Shield source candidates against the published alpha.10 base. Its package version is `0.2.0-alpha.11`. The source commit alone is **not** an npm release; verify the registry artifact before claiming publication.
+This release combines Security Replay, Policy Studio, and Webhook Shield against the alpha.10 base. `0.2.0-alpha.11` is published under npm's `alpha` tag. The registry tarball matched the reviewed 48-file stage, and its signature, provenance, and clean installation were verified.
 
 | Tool | Current scope | Excluded behavior |
 | --- | --- | --- |
@@ -12,4 +12,4 @@ The combined tree passed 65 source tests, TypeScript checks, clean tarball insta
 
 Run `node examples/security-tools-workflow.mjs` to see a local sender sign synthetic observations, Webhook Shield verify the exact bytes, Policy Studio compare OBSERVE with proposed ENFORCE using redacted source aliases, and Security Replay simulate the proposed policy. The example uses a fresh in-process HMAC key and never sends a network request or installs a live restriction. A valid signature authenticates the sender's bytes; a real integration must separately establish that the sender verified the client IP and event before treating either as security evidence. Redacted aliases are random per report and cannot be joined across the comparison and replay output.
 
-Before a public alpha containing these tools, review the combined API and security boundaries, run both supported Node versions in CI, check the exact staged tarball and provenance, and obtain the approval required for that later release. The one-person exception for alpha.10 did not authorize this candidate.
+The combined API and security boundaries were reviewed; both supported Node versions passed CI. The owner approved a new one-person exception scoped to the exact alpha.11 npm stage, and the maintainer approved publication with 2FA. Independent review remains unmet and must not be claimed for this release or a later one.

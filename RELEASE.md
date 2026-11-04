@@ -1,8 +1,8 @@
 # Node Guard alpha release
 
-The public package is published only from a version tag after tests and package review. The current npm `alpha` release is `0.2.0-alpha.10`; `latest` remains `0.2.0-alpha.6`. Install the exact alpha version for evaluation.
+The public package is published only from a version tag after tests and package review. The current npm `alpha` release is `0.2.0-alpha.11`; `latest` remains `0.2.0-alpha.6`. Install the exact alpha version for evaluation.
 
-The alpha.9 tag failed npm staging authorization and predates the canonical IPv6 source correction. Do not approve or publish alpha.9. Alpha.10 was staged through the stage-only trusted publisher and approved with npm 2FA after the owner accepted a scoped one-person review exception. The exact public tarball and provenance were verified. The normal release procedure below still calls for a separate operator.
+The alpha.9 tag failed npm staging authorization and predates the canonical IPv6 source correction. Do not approve or publish alpha.9. Alpha.10 and alpha.11 were staged through the stage-only trusted publisher and approved with npm 2FA after the owner accepted separately scoped one-person review exceptions. Their exact public tarballs and provenance were verified. The normal release procedure below still calls for a separate operator.
 
 ## First-time trusted publisher setup
 
