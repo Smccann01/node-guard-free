@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "policy_id": "auth-login-v1",
+  "application_id": "billing-api",
+  "mode": "OBSERVE",
+  "route_id": "auth.login",
+  "reason_code": "authentication_failure",
+  "window_seconds": 60,
+  "threshold": 2,
+  "action": "THROTTLE",
+  "restriction_seconds": 120
+}

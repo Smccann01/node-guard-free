@@ -1,0 +1,67 @@
+{
+  "name": "@honeymesh/node-guard",
+  "version": "0.2.0-alpha.6",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "files": [
+    "README.md",
+    "DEVELOPER_SETUP.md",
+    "NEXT_ROUTE_GUIDE.md",
+    "index.mjs",
+    "index.d.ts",
+    "guard-core.mjs",
+    "express.mjs",
+    "express.d.ts",
+    "policy.mjs",
+    "policy.d.ts",
+    "policy-runtime.mjs",
+    "policy-runtime.d.ts",
+    "trusted-source.mjs",
+    "trusted-source.d.ts",
+    "next-route.mjs",
+    "next-route.d.ts",
+    "bin/nodeguard.mjs",
+    "examples/auth-policy.json",
+    "examples/auth-observations.json",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.mjs"
+    },
+    "./express": {
+      "types": "./express.d.ts",
+      "default": "./express.mjs"
+    },
+    "./policy": {
+      "types": "./policy.d.ts",
+      "default": "./policy.mjs"
+    },
+    "./policy-runtime": {
+      "types": "./policy-runtime.d.ts",
+      "default": "./policy-runtime.mjs"
+    },
+    "./trusted-source": {
+      "types": "./trusted-source.d.ts",
+      "default": "./trusted-source.mjs"
+    },
+    "./next-route": {
+      "types": "./next-route.d.ts",
+      "default": "./next-route.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": { "nodeguard": "./bin/nodeguard.mjs" },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test",
+    "smoke:package": "node scripts/clean-install-smoke.mjs"
+  },
+  "devDependencies": {
+    "express": "^5.3.0"
+  }
+}

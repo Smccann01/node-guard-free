@@ -1,0 +1,22 @@
+[
+  {
+    "schema_version": 1,
+    "application_id": "billing-api",
+    "event_id": "example-event-0001",
+    "observed_at": "2026-11-03T17:59:25Z",
+    "route_id": "auth.login",
+    "reason_code": "authentication_failure",
+    "source_ip": "8.8.8.8",
+    "protocol": "HTTPS"
+  },
+  {
+    "schema_version": 1,
+    "application_id": "billing-api",
+    "event_id": "example-event-0002",
+    "observed_at": "2026-11-03T17:59:35Z",
+    "route_id": "auth.login",
+    "reason_code": "authentication_failure",
+    "source_ip": "8.8.8.8",
+    "protocol": "HTTPS"
+  }
+]

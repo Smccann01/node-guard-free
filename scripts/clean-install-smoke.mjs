@@ -1,0 +1,52 @@
+import { execFileSync } from "node:child_process";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const temporaryRoot = await mkdtemp(path.join(tmpdir(), "nodeguard-clean-install-"));
+
+try {
+  const tarball = execFileSync("npm", ["pack", "--pack-destination", temporaryRoot, "--silent"],
+    { cwd: packageRoot, encoding: "utf8" }).trim();
+  const appRoot = path.join(temporaryRoot, "app");
+  await mkdir(appRoot);
+  execFileSync("npm", ["install", "--ignore-scripts", "--offline", "--no-audit", "--no-fund",
+    "--prefix", appRoot, path.join(temporaryRoot, tarball)], { stdio: "pipe" });
+
+  const cli = path.join(appRoot, "node_modules", ".bin", "nodeguard");
+  const policyPath = path.join(appRoot, "nodeguard.policy.json");
+  execFileSync(cli, ["init", "--output", policyPath], { stdio: "pipe" });
+  const policy = JSON.parse(await readFile(policyPath, "utf8"));
+  if (policy.mode !== "OBSERVE") throw new Error("clean install did not start in OBSERVE");
+  const doctor = JSON.parse(execFileSync(cli, ["doctor", policyPath], { encoding: "utf8" }));
+  if (doctor.source_trust !== "not checked" || doctor.state_scope !== "one_process") {
+    throw new Error("clean install diagnostics overstated the deployment scope");
+  }
+
+  const smokePath = path.join(appRoot, "smoke.mjs");
+  await writeFile(smokePath, `
+import { createNodeGuard } from '@honeymesh/node-guard';
+import { createPolicyGuardV1 } from '@honeymesh/node-guard/policy-runtime';
+import { createTrustedSourceResolver } from '@honeymesh/node-guard/trusted-source';
+import { createNextRouteGuard } from '@honeymesh/node-guard/next-route';
+const source = createTrustedSourceResolver({ trustedProxyIps: ['127.0.0.1'] });
+if (source({ socket: { remoteAddress: '127.0.0.1' }, headers: { 'x-forwarded-for': '1.1.1.1, 8.8.8.8' } }) !== '8.8.8.8') process.exit(1);
+const free = createNodeGuard({ mode: 'enforce', thresholds: { replay_burst: 2 }, canActOnSource: () => true });
+free.record({ sourceIp: '8.8.8.8', reasonCode: 'replay_burst' });
+free.record({ sourceIp: '8.8.8.8', reasonCode: 'replay_burst' });
+if (!free.isBlocked('8.8.8.8')) process.exit(2);
+const policy = { schema_version: 1, policy_id: 'auth-login-v1', application_id: 'billing-api', mode: 'ENFORCE', route_id: 'auth.login', reason_code: 'authentication_failure', window_seconds: 60, threshold: 2, action: 'THROTTLE', restriction_seconds: 60 };
+const at = Date.parse('2026-11-03T18:00:00Z');
+const guard = createPolicyGuardV1({ policy, now: () => at, canActOnSource: () => true });
+for (const event_id of ['event-001', 'event-002']) guard.record({ schema_version: 1, application_id: 'billing-api', event_id, observed_at: '2026-11-03T18:00:00Z', route_id: 'auth.login', reason_code: 'authentication_failure', source_ip: '8.8.8.8', protocol: 'HTTPS' });
+if (!guard.isBlocked('8.8.8.8')) process.exit(3);
+const routeCheck = createNextRouteGuard({ guard, getVerifiedSourceIp: () => '8.8.8.8' });
+if ((await routeCheck(new Request('https://example.test/api/login')))?.status !== 429) process.exit(4);
+`);
+  execFileSync(process.execPath, [smokePath], { stdio: "pipe" });
+  process.stdout.write("Clean tarball install passed: CLI, OBSERVE default, local Guard, v1 runtime, trusted source, Next route export.\n");
+} finally {
+  await rm(temporaryRoot, { recursive: true, force: true });
+}
