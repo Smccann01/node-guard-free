@@ -158,6 +158,12 @@ test('two worker processes share one app decision state through the local coordi
     assert.equal((await call(socketPath, 'POST', '/v1/restrictions/release', adminToken,
       { application_id: 'app-a', source_ip: '8.8.8.8' })).body.affected, 1);
     assert.equal((await client.evaluate('8.8.8.8')).decision, 'ALLOW');
+    const simultaneous = await Promise.all([
+      callInChild(socketPath, appAToken, observation('app-a', 'event-103')),
+      callInChild(socketPath, appAToken, observation('app-a', 'event-104')),
+    ]);
+    assert.deepEqual(simultaneous.map((item) => item.body.action).sort(), ['THROTTLE', 'recorded']);
+    assert.equal((await evaluateInChild(socketPath, appAToken, '8.8.8.8')).decision, 'THROTTLE');
   } finally {
     await api.stop();
     await rm(dir, { recursive: true, force: true });
