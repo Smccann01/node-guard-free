@@ -4,12 +4,6 @@ on:
   push:
     tags:
       - 'v*-alpha.*'
-  workflow_dispatch:
-    inputs:
-      release_tag:
-        description: 'Reviewed alpha tag to stage (for example v0.2.0-alpha.8)'
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -27,18 +21,15 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref }}
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
           package-manager-cache: false
       - run: npm install --global npm@11.21.1
       - name: Verify release tag and npm version
-        env:
-          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
         run: |
-          node -e "const p=require('./package.json'); if (process.env.RELEASE_TAG !== 'v'+p.version || !/^0\\.2\\.0-alpha\\.[0-9]+$/.test(p.version)) process.exit(1)"
-          test "$(git rev-parse HEAD)" = "$(git rev-list -n 1 "$RELEASE_TAG")"
+          node -e "const p=require('./package.json'); if (process.env.GITHUB_REF_NAME !== 'v'+p.version || !/^0\\.2\\.0-alpha\\.[0-9]+$/.test(p.version)) process.exit(1)"
+          test "$(git rev-parse HEAD)" = "$(git rev-list -n 1 "$GITHUB_REF_NAME")"
           git fetch --no-tags origin main
           git merge-base --is-ancestor HEAD origin/main
           npm --version
