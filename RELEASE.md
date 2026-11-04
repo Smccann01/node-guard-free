@@ -17,7 +17,7 @@ The workflow is `.github/workflows/publish.yml`. Configure this shortly before t
 
 1. Review source, dependency licenses, package file list, and [the change log](CHANGELOG.md). Run `npm ci`, `npm test`, `npm run typecheck`, `npm run smoke:package`, and `npm run smoke:next` on the exact commit. Ask a second operator to follow [the reproduction guide](REPRODUCE.md) without unpublished local files.
 2. Merge only reviewed changes to `main`. Set `package.json` and lockfile to the intended new alpha version. Confirm `git status` is clean.
-3. Configure or verify the matching npm trusted publisher. Create and push an annotated `v<package-version>` tag from `main`.
+3. Configure or verify the matching npm trusted publisher. Create and push an annotated `v<package-version>` tag from `main`. The staging workflow runs on the tag push; manual workflow dispatch is not used because npm may match a manually invoked workflow against a different identity.
 4. Check the GitHub Actions staging job. Inspect the stage ID, staged metadata, tarball contents, and source revision. A successful staging job is not a public release.
 5. Have the package maintainer approve that exact staged version with 2FA in npm. Verify `npm view @network-decode/node-guard@<version> dist --json`, the `alpha` dist-tag, provenance, and a clean registry install. Do not infer publication from the Git push or staging result alone.
 6. Only after the registry package is verified, update website install commands, supported-scope copy, and the phase checkpoint. Deploy and smoke-test the live site.
