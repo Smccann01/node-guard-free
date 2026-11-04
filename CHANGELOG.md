@@ -3,6 +3,7 @@
 ## Unreleased source candidate
 
 - Add deterministic local replay of ordered v1 and synthetic v2 policy observations. Timelines show decision transitions and bounded state without network or host enforcement. ENFORCE CLI replay requires an explicit protected-source file. This is not in the public npm alpha.
+- Add read-only policy diff and deterministic shared-fixture comparison for local review. This is not in the public npm alpha and does not activate a policy.
 
 ## 0.2.0-alpha.10 (public alpha)
 

@@ -9,6 +9,7 @@ import { createVerifiedIdentity, createIdentityGuardV2, type IdentityPolicyV2 } 
 import { createExpressIdentityGuardV2 } from '@network-decode/node-guard/identity-express';
 import { createNextIdentityGuardV2 } from '@network-decode/node-guard/identity-next-route';
 import { createLocalNodeGuardApi } from '@network-decode/node-guard/local-api';
+import { comparePolicySimulation, diffPolicies, type PolicyDiff } from '@network-decode/node-guard/policy-diff';
 
 const guard: GuardInstance = createNodeGuard({ mode: 'observe' });
 const policy: PolicyV1 = {
@@ -16,6 +17,10 @@ const policy: PolicyV1 = {
   mode: 'OBSERVE', route_id: 'auth.login', reason_code: 'authentication_failure',
   window_seconds: 60, threshold: 2, action: 'THROTTLE', restriction_seconds: 60,
 };
+const policyDiff: PolicyDiff = diffPolicies(policy, { ...policy, threshold: 3 });
+void policyDiff;
+const policyComparison = comparePolicySimulation(policy, policy, [], { at: new Date().toISOString() });
+void policyComparison;
 const observation: ObservationV1 = {
   schema_version: 1, application_id: 'billing-api', event_id: 'event-001',
   observed_at: new Date().toISOString(), route_id: 'auth.login',

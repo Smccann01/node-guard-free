@@ -1,6 +1,6 @@
 # Node Guard Free
 
-> Development branch note: this source adds local v1 and synthetic v2 policy replay. The public npm `alpha` release is `0.2.0-alpha.10`; replay is not in that package. See [identity scopes v2](IDENTITY_SCOPES_V2.md) and [local replay](REPLAY.md) for their limits.
+> Development branch note: this source includes [local replay](REPLAY.md) and a read-only [Policy Studio candidate](POLICY_STUDIO.md). The public npm `alpha` release is `0.2.0-alpha.10`; these tools are not in that package. See [identity scopes v2](IDENTITY_SCOPES_V2.md) for the trust contract and limits.
 
 Node Guard Free is a local application protection SDK for Node.js. It requires no account, license key, HoneyMesh agent, root access, or subscription. It does not attach XDP, enforce host firewall rules, or participate in Exchange.
 
@@ -45,7 +45,7 @@ const guard = createPolicyGuardV1({ policy, canActOnSource: (ip) => !protectedIp
 //   source_ip: verifiedSourceIp, protocol: 'HTTPS' });
 ```
 
-See [developer setup](DEVELOPER_SETUP.md), [Next route guide](NEXT_ROUTE_GUIDE.md), and [independent alpha check](REPRODUCE.md) for integration and reproduction steps. `nodeguard policy test` simulates decisions at a specified timestamp.
+See [developer setup](DEVELOPER_SETUP.md), [Next route guide](NEXT_ROUTE_GUIDE.md), and [independent alpha check](REPRODUCE.md) for integration and reproduction steps. `nodeguard policy test` simulates decisions at a specified timestamp. The [policy review candidate](POLICY_STUDIO.md) compares a current and proposed policy without activating either one.
 
 The source candidate's `nodeguard replay` command shows v1 observations or v2 synthetic identity fixtures, decisions, and simulated restrictions in time order. It does not inspect a running application. See the [replay guide](REPLAY.md).
 
@@ -62,6 +62,8 @@ This package stores no request bodies, tokens, or passwords in the standalone en
 - `nodeguard init [--output file]`
 - `nodeguard doctor [policy.json]`
 - `nodeguard policy validate policy.json`
+- `nodeguard policy diff current-policy.json proposed-policy.json`
+- `nodeguard policy compare current-policy.json proposed-policy.json observations.json --at 2026-11-03T18:00:00Z`
 - `nodeguard policy test policy.json observations.json --at 2026-11-03T18:00:00Z`
 - `nodeguard replay policy.json observations.json --at 2026-11-03T18:00:00Z [--protected source-ips.json] [--redact]` (source candidate)
 - `nodeguard inspect policy.json`
