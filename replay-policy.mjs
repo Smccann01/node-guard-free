@@ -1,9 +1,17 @@
+import { createHash } from 'node:crypto';
 import { normalizeEligibleSource } from './guard-core.mjs';
 import { validateObservationV1, validatePolicyV1 } from './policy.mjs';
 import { createPolicyGuardV1 } from './policy-runtime.mjs';
 
 const MAX_EVENTS = 10_000;
 const MAX_PROTECTED_SOURCES = 256;
+const POLICY_FIELDS = ['schema_version', 'policy_id', 'application_id', 'mode', 'route_id',
+  'reason_code', 'window_seconds', 'threshold', 'action', 'restriction_seconds'];
+
+function policyFingerprint(policy) {
+  const canonical = POLICY_FIELDS.map((field) => [field, policy[field]]);
+  return createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
+}
 
 function utcMilliseconds(value, name) {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(value)) {
@@ -68,6 +76,7 @@ export function replayPolicyV1({ policy: inputPolicy, observations, at, protecte
     schema_version: 1,
     policy_id: policy.policy_id,
     application_id: policy.application_id,
+    policy_fingerprint_sha256: policyFingerprint(policy),
     policy_mode: policy.mode,
     replay_at: new Date(replayAt).toISOString(),
     event_count: timeline.length,

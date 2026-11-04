@@ -2,6 +2,8 @@
 
 `nodeguard replay` is an experimental, local-only v1 policy analysis tool. It evaluates an ordered observation file with the same in-memory v1 policy engine used by Node Guard. It returns a timeline and active restrictions at the requested UTC time. It never connects to HoneyMesh, Exchange, a socket, or the network.
 
+Each report includes a SHA-256 fingerprint over the validated policy fields in a fixed order. Record this alongside the source revision and observation-file hash when comparing runs. The fingerprint identifies policy bytes after validation; it is not a signature or proof that the policy was active in a running application.
+
 For the bundled OBSERVE example:
 
 ```sh

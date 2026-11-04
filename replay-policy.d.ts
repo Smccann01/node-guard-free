@@ -20,6 +20,7 @@ export declare function replayPolicyV1(options: {
   schema_version: 1;
   policy_id: string;
   application_id: string;
+  policy_fingerprint_sha256: string;
   policy_mode: 'OBSERVE' | 'ENFORCE';
   replay_at: string;
   event_count: number;

@@ -24,6 +24,7 @@ test('replay shows chronological restriction and natural expiration without host
   const observations = [first, second];
   const active = replayPolicyV1({ policy, observations, at: '2026-11-04T10:00:20Z', protectedSources: [] });
   assert.equal(active.enforcement_scope, 'simulation_only');
+  assert.match(active.policy_fingerprint_sha256, /^[a-f0-9]{64}$/);
   assert.deepEqual(active.timeline.map((entry) => entry.record_action), ['recorded', 'THROTTLE']);
   assert.deepEqual(active.timeline.map((entry) => entry.effective_action), ['ALLOW', 'THROTTLE']);
   assert.deepEqual(active.active_restrictions, [{ source_ip: '8.8.8.8', action: 'THROTTLE',
@@ -31,6 +32,15 @@ test('replay shows chronological restriction and natural expiration without host
   const expired = replayPolicyV1({ policy, observations, at: '2026-11-04T10:00:32Z' });
   assert.deepEqual(expired.active_restrictions, []);
   assert.equal(observations.length, 2);
+});
+
+test('policy fingerprint is stable across key order and changes when behavior changes', () => {
+  const reordered = Object.fromEntries(Object.entries(policy).reverse());
+  const baseline = replayPolicyV1({ policy, observations: [], at: first.observed_at });
+  const same = replayPolicyV1({ policy: reordered, observations: [], at: first.observed_at });
+  const changed = replayPolicyV1({ policy: { ...policy, threshold: 3 }, observations: [], at: first.observed_at });
+  assert.equal(baseline.policy_fingerprint_sha256, same.policy_fingerprint_sha256);
+  assert.notEqual(baseline.policy_fingerprint_sha256, changed.policy_fingerprint_sha256);
 });
 
 test('replay preserves duplicate and protected-source rejection', () => {
