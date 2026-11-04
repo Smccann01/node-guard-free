@@ -17,7 +17,7 @@ Node Guard Free is a local application protection SDK for Node.js. It requires n
 For local evaluation, clone this repository, run `npm ci`, `npm test`, and `npm run smoke:package`. When the npm package is published, the installation path will be:
 
 ```sh
-npm install @honeymesh/node-guard
+npm install @network-decode/node-guard
 npx nodeguard init
 npx nodeguard doctor nodeguard.policy.json
 npx nodeguard policy validate nodeguard.policy.json
@@ -28,7 +28,7 @@ npx nodeguard policy validate nodeguard.policy.json
 A direct application decision can be created with the v1 engine:
 
 ```js
-import { createPolicyGuardV1 } from '@honeymesh/node-guard/policy-runtime';
+import { createPolicyGuardV1 } from '@network-decode/node-guard/policy-runtime';
 
 const policy = {
   schema_version: 1, policy_id: 'login-v1', application_id: 'billing-api',

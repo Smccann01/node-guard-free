@@ -27,10 +27,10 @@ try {
 
   const smokePath = path.join(appRoot, "smoke.mjs");
   await writeFile(smokePath, `
-import { createNodeGuard } from '@honeymesh/node-guard';
-import { createPolicyGuardV1 } from '@honeymesh/node-guard/policy-runtime';
-import { createTrustedSourceResolver } from '@honeymesh/node-guard/trusted-source';
-import { createNextRouteGuard } from '@honeymesh/node-guard/next-route';
+import { createNodeGuard } from '@network-decode/node-guard';
+import { createPolicyGuardV1 } from '@network-decode/node-guard/policy-runtime';
+import { createTrustedSourceResolver } from '@network-decode/node-guard/trusted-source';
+import { createNextRouteGuard } from '@network-decode/node-guard/next-route';
 const source = createTrustedSourceResolver({ trustedProxyIps: ['127.0.0.1'] });
 if (source({ socket: { remoteAddress: '127.0.0.1' }, headers: { 'x-forwarded-for': '1.1.1.1, 8.8.8.8' } }) !== '8.8.8.8') process.exit(1);
 const free = createNodeGuard({ mode: 'enforce', thresholds: { replay_burst: 2 }, canActOnSource: () => true });

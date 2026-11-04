@@ -1,6 +1,6 @@
 # Developer setup
 
-1. Use Node.js 20 or newer in a persistent Node process. Until npm publication, clone this repository, run `npm ci`, and use `node bin/nodeguard.mjs init`. After publication, install `@honeymesh/node-guard` and run `npx nodeguard init`.
+1. Use Node.js 20 or newer in a persistent Node process. Until npm publication, clone this repository, run `npm ci`, and use `node bin/nodeguard.mjs init`. After publication, install `@network-decode/node-guard` and run `npx nodeguard init`.
 2. Run `npx nodeguard doctor nodeguard.policy.json`. The `source_trust: not checked` result means the CLI cannot verify your ingress topology.
 3. Inspect the generated OBSERVE policy. Set `application_id` and `route_id` to stable identifiers. Keep `mode` as `OBSERVE` until normal traffic has been reviewed.
 4. Determine the actual socket peer address. If a reverse proxy is used, list each trusted proxy IP in `createTrustedSourceResolver({ trustedProxyIps })`. Never trust `X-Forwarded-For` from an unlisted peer.
@@ -13,9 +13,9 @@
 
 ```js
 import express from 'express';
-import { createPolicyGuardV1 } from '@honeymesh/node-guard/policy-runtime';
-import { createExpressNodeGuard } from '@honeymesh/node-guard/express';
-import { createTrustedSourceResolver } from '@honeymesh/node-guard/trusted-source';
+import { createPolicyGuardV1 } from '@network-decode/node-guard/policy-runtime';
+import { createExpressNodeGuard } from '@network-decode/node-guard/express';
+import { createTrustedSourceResolver } from '@network-decode/node-guard/trusted-source';
 import policy from './nodeguard.policy.json' with { type: 'json' };
 
 const app = express();
