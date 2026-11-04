@@ -1,5 +1,11 @@
 # Node Guard Free changes
 
+## 0.2.0-alpha.9 (development branch)
+
+- Add a route-aware v2 policy set with exact-route precedence, one optional wildcard, explicit exclusions, cross-policy event replay protection, and policy-specific release.
+- Add Express and Next.js Node adapters, type declarations, and a clean Next.js package integration check for the route set.
+- This is not a published registry release. State is still process-local, and host XDP and Exchange remain separate.
+
 ## 0.2.0-alpha.8 (candidate)
 
 - Add an experimental v2 application policy with server-verified subject, tenant, or API-key identity. A source-IP scope remains available. The v1 API and published `0.2.0-alpha.6` behavior are unchanged.

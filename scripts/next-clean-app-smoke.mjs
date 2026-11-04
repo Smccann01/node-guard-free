@@ -26,8 +26,10 @@ try {
   if (!tarball) throw new Error('npm pack did not produce a tarball');
   const routeDir = path.join(root, 'app', 'api', 'check');
   const identityRouteDir = path.join(root, 'app', 'api', 'identity');
+  const setRouteDir = path.join(root, 'app', 'api', 'policy-set');
   await mkdir(routeDir, { recursive: true });
   await mkdir(identityRouteDir, { recursive: true });
+  await mkdir(setRouteDir, { recursive: true });
   await writeFile(path.join(root, 'package.json'), JSON.stringify({ name: 'nodeguard-next-smoke', private: true, type: 'module', scripts: { build: 'next build --webpack' } }));
   await writeFile(path.join(root, 'app', 'layout.js'), 'export default function RootLayout({ children }) { return <html><body>{children}</body></html>; }\n');
   await writeFile(path.join(root, 'app', 'page.js'), 'export default function Page() { return <main>Node Guard smoke</main>; }\n');
@@ -43,6 +45,29 @@ export async function POST(request) {
   for (const event_id of ['smoke-event-001', 'smoke-event-002']) guard.record({ schema_version: 1, application_id: 'smoke-app', event_id, observed_at: at, route_id: 'auth.login', reason_code: 'authentication_failure', source_ip: '8.8.8.8', protocol: 'HTTPS' });
   return (await check(request)) ?? Response.json({ ok: true });
 }
+`);
+  await writeFile(path.join(setRouteDir, 'route.js'), `
+import { createVerifiedIdentity } from '@network-decode/node-guard/identity-policy';
+import { createIdentityPolicySetV2 } from '@network-decode/node-guard/identity-policy-set';
+import { createNextIdentityPolicySetV2 } from '@network-decode/node-guard/identity-policy-set-next';
+const base = { schema_version: 2, application_id: 'smoke-app', mode: 'ENFORCE', reason_code: 'replay_burst', identity_scope: 'subject_id', window_seconds: 60, threshold: 2, action: 'THROTTLE', restriction_seconds: 60 };
+const set = createIdentityPolicySetV2({ policies: [
+  { ...base, policy_id: 'exact', route_id: 'auth.login' },
+  { ...base, policy_id: 'wildcard', route_id: '*', excluded_route_ids: ['health.check'] },
+], canActOnSource: () => true });
+const identity = createVerifiedIdentity({ subjectId: 'fixture-authenticated-user' });
+const check = createNextIdentityPolicySetV2({ policySet: set, getVerifiedSourceIp: () => '8.8.8.8',
+  getRouteId: (request) => request.method === 'GET' ? 'health.check' : 'auth.login',
+  getVerifiedIdentity: (request) => request.method === 'GET' ? (() => { throw new Error('excluded route requested identity'); })() : identity });
+function record(route, prefix) {
+  const at = new Date().toISOString();
+  for (const suffix of ['001', '002']) set.record({ schema_version: 2, application_id: 'smoke-app',
+    event_id: prefix + '-event-' + suffix, observed_at: at, route_id: route,
+    reason_code: 'replay_burst', source_ip: '8.8.8.8', protocol: 'HTTPS' }, identity);
+}
+export async function GET(request) { return (await check(request)) ?? Response.json({ ok: true }); }
+export async function POST(request) { record('api.transfer', 'wildcard'); return (await check(request)) ?? Response.json({ ok: true }); }
+export async function PUT(request) { record('auth.login', 'exact'); return (await check(request)) ?? Response.json({ ok: true }); }
 `);
   await writeFile(path.join(identityRouteDir, 'route.js'), `
 import { createIdentityGuardV2, createVerifiedIdentity } from '@network-decode/node-guard/identity-policy';
@@ -88,7 +113,13 @@ export async function POST(request) {
   if (identityResponse.status !== 429 || identityResponse.headers.get('retry-after') !== '60') {
     throw new Error(`unexpected identity decision: ${identityResponse.status} ${await identityResponse.text()}`);
   }
-  process.stdout.write('Clean Next.js 16.4.3 app build and v1/v2 Route Handler decisions passed.\n');
+  const excludedSet = await fetch(`http://127.0.0.1:${port}/api/policy-set`);
+  if (excludedSet.status !== 200) throw new Error(`excluded policy-set route returned ${excludedSet.status}`);
+  const wildcardOnly = await fetch(`http://127.0.0.1:${port}/api/policy-set`, { method: 'POST' });
+  if (wildcardOnly.status !== 200) throw new Error(`wildcard restriction overrode exact route: ${wildcardOnly.status}`);
+  const exactSet = await fetch(`http://127.0.0.1:${port}/api/policy-set`, { method: 'PUT' });
+  if (exactSet.status !== 429) throw new Error(`exact policy-set route returned ${exactSet.status}`);
+  process.stdout.write('Clean Next.js 16.4.3 app build and v1/v2 and route-set decisions passed.\n');
 } finally {
   if (server && server.exitCode === null) {
     server.kill('SIGTERM');
