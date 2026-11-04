@@ -15,7 +15,7 @@ The workflow is `.github/workflows/publish.yml`. Configure this shortly before t
 
 ## Release procedure
 
-1. Review source, dependency licenses, package file list, and [the change log](CHANGELOG.md). Run `npm ci`, `npm test`, `npm run typecheck`, `npm run smoke:package`, and `npm run smoke:next` on the exact commit.
+1. Review source, dependency licenses, package file list, and [the change log](CHANGELOG.md). Run `npm ci`, `npm test`, `npm run typecheck`, `npm run smoke:package`, and `npm run smoke:next` on the exact commit. Ask a second operator to follow [the reproduction guide](REPRODUCE.md) without unpublished local files.
 2. Merge only reviewed changes to `main`. Set `package.json` and lockfile to the intended new alpha version. Confirm `git status` is clean.
 3. Configure or verify the matching npm trusted publisher. Create and push an annotated `v<package-version>` tag from `main`.
 4. Check the GitHub Actions publish job. Verify `npm view @network-decode/node-guard@<version> dist --json`, the `alpha` dist-tag, provenance, and a clean registry install. Do not infer success from the Git push alone.

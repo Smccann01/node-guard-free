@@ -20,6 +20,7 @@
     "IDENTITY_SCOPES_V2.md",
     "LOCAL_API.md",
     "RELEASE.md",
+    "REPRODUCE.md",
     "index.mjs",
     "index.d.ts",
     "guard-core.mjs",

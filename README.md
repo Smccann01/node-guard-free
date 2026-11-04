@@ -45,7 +45,7 @@ const guard = createPolicyGuardV1({ policy, canActOnSource: (ip) => !protectedIp
 //   source_ip: verifiedSourceIp, protocol: 'HTTPS' });
 ```
 
-See [developer setup](DEVELOPER_SETUP.md) and [Next route guide](NEXT_ROUTE_GUIDE.md) for complete integration rules. `nodeguard policy test` simulates decisions at a specified timestamp.
+See [developer setup](DEVELOPER_SETUP.md), [Next route guide](NEXT_ROUTE_GUIDE.md), and [independent alpha check](REPRODUCE.md) for integration and reproduction steps. `nodeguard policy test` simulates decisions at a specified timestamp.
 
 ## Security model
 
