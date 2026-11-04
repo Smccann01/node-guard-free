@@ -17,6 +17,7 @@
     "DEVELOPER_SETUP.md",
     "NEXT_ROUTE_GUIDE.md",
     "IDENTITY_SCOPES_V2.md",
+    "LOCAL_API.md",
     "index.mjs",
     "index.d.ts",
     "guard-core.mjs",
@@ -36,6 +37,8 @@
     "identity-express.d.ts",
     "identity-next-route.mjs",
     "identity-next-route.d.ts",
+    "local-api.mjs",
+    "local-api.d.ts",
     "bin/nodeguard.mjs",
     "examples/auth-policy.json",
     "examples/auth-observations.json",
@@ -79,6 +82,10 @@
     "./identity-next-route": {
       "types": "./identity-next-route.d.ts",
       "default": "./identity-next-route.mjs"
+    },
+    "./local-api": {
+      "types": "./local-api.d.ts",
+      "default": "./local-api.mjs"
     },
     "./package.json": "./package.json"
   },

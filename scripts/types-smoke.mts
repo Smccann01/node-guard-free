@@ -7,6 +7,7 @@ import { createTrustedSourceResolver } from '@network-decode/node-guard/trusted-
 import { createVerifiedIdentity, createIdentityGuardV2, type IdentityPolicyV2 } from '@network-decode/node-guard/identity-policy';
 import { createExpressIdentityGuardV2 } from '@network-decode/node-guard/identity-express';
 import { createNextIdentityGuardV2 } from '@network-decode/node-guard/identity-next-route';
+import { createLocalNodeGuardApi } from '@network-decode/node-guard/local-api';
 
 const guard: GuardInstance = createNodeGuard({ mode: 'observe' });
 const policy: PolicyV1 = {
@@ -35,3 +36,6 @@ const identityExpress = createExpressIdentityGuardV2({ guard: identityGuard,
 const identityNext = createNextIdentityGuardV2({ guard: identityGuard,
   getVerifiedSourceIp: () => '8.8.8.8', getRouteId: () => 'auth.login', getVerifiedIdentity: () => identity });
 void [identityExpress, identityNext];
+const api = createLocalNodeGuardApi({ socketPath: '/tmp/nodeguard-types-smoke.sock', managementToken: 'm'.repeat(32),
+  applications: [{ applicationId: 'billing-api', token: 'a'.repeat(32), guard: runtime }] });
+void api;
