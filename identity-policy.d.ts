@@ -47,6 +47,11 @@ export type IdentityDecisionV2 = Readonly<{
 }>;
 export declare function validateIdentityPolicyV2(input: unknown): IdentityPolicyV2;
 export declare function validateIdentityObservationV2(input: unknown): IdentityObservationV2;
+export declare function simulateIdentityPolicyV2(policy: IdentityPolicyV2,
+  entries: Array<{ observation: IdentityObservationV2; fixture_identity?: string }>,
+  options: { at: string }): Array<{ policy_id: string; identity_scope: IdentityScopeV2;
+    identity_ref: string; hit_count: number; decision: "NONE" | "OBSERVE" | "THROTTLE" | "DENY";
+    restriction_expires_at: string | null }>;
 export declare function createIdentityGuardV2(options: {
   policy: IdentityPolicyV2;
   canActOnSource?: (verifiedSourceIp: string) => boolean;

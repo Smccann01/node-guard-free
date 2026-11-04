@@ -63,7 +63,7 @@ test("CLI validates and simulates policy files from a clean local input", async 
     const output = JSON.parse(execFileSync(process.execPath, [cli, "policy", "test", policyPath, eventsPath, "--at", at], { encoding: "utf8" }));
     assert.equal(output.results[0].decision, "THROTTLE");
     await writeFile(policyPath, JSON.stringify({ ...policy, schema_version: 2 }));
-    assert.throws(() => execFileSync(process.execPath, [cli, "policy", "validate", policyPath], { stdio: "pipe" }), /unsupported policy schema_version/);
+    assert.throws(() => execFileSync(process.execPath, [cli, "policy", "validate", policyPath], { stdio: "pipe" }), /unknown identity_scope/);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

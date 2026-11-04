@@ -1,0 +1,28 @@
+[
+  {
+    "fixture_identity": "fixture:alice",
+    "observation": {
+      "schema_version": 2,
+      "application_id": "billing-api",
+      "event_id": "fixture-event-001",
+      "observed_at": "2026-11-04T06:00:00Z",
+      "route_id": "api.transfer",
+      "reason_code": "replay_burst",
+      "source_ip": "8.8.8.8",
+      "protocol": "HTTPS"
+    }
+  },
+  {
+    "fixture_identity": "fixture:alice",
+    "observation": {
+      "schema_version": 2,
+      "application_id": "billing-api",
+      "event_id": "fixture-event-002",
+      "observed_at": "2026-11-04T06:00:00Z",
+      "route_id": "api.transfer",
+      "reason_code": "replay_burst",
+      "source_ip": "9.9.9.9",
+      "protocol": "HTTPS"
+    }
+  }
+]

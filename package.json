@@ -42,6 +42,8 @@
     "bin/nodeguard.mjs",
     "examples/auth-policy.json",
     "examples/auth-observations.json",
+    "examples/identity-policy.json",
+    "examples/identity-observations.json",
     "LICENSE",
     "SECURITY.md",
     "CONTRIBUTING.md"

@@ -48,6 +48,49 @@ export function validateIdentityObservationV2(input) {
   return Object.freeze({ ...input, source_ip: normalizeEligibleIp(input.source_ip) });
 }
 
+/** Pure simulation. Non-IP scopes accept synthetic fixture IDs only. */
+export function simulateIdentityPolicyV2(policyInput, entries, { at } = {}) {
+  const policy = validateIdentityPolicyV2(policyInput);
+  if (!Array.isArray(entries) || entries.length > 10_000) throw new RangeError("entries must contain at most 10000 fixtures");
+  if (typeof at !== "string" || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,3})?Z$/.test(at) ||
+      !Number.isFinite(Date.parse(at))) throw new TypeError("at must be an ISO 8601 UTC timestamp");
+  const atMs = Date.parse(at);
+  if (new Date(atMs).toISOString() !== at.replace(/(?:\.(\d{1,3}))?Z$/, (_match, fraction) => `.${(fraction ?? "").padEnd(3, "0")}Z`)) {
+    throw new TypeError("at must be a valid UTC timestamp");
+  }
+  const counts = new Map();
+  const seenIds = new Set();
+  for (const entry of entries) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry) ||
+        Object.keys(entry).some((key) => !["observation", "fixture_identity"].includes(key))) {
+      throw new TypeError("each fixture must contain an observation and optional fixture_identity");
+    }
+    const observation = validateIdentityObservationV2(entry.observation);
+    const fixture = entry.fixture_identity;
+    if (policy.identity_scope === "source_ip") {
+      if (fixture !== undefined) throw new TypeError("source_ip simulation must not supply fixture_identity");
+    } else if (typeof fixture !== "string" || !/^fixture:[A-Za-z0-9_-]{1,64}$/.test(fixture)) {
+      throw new TypeError("identity simulation requires a synthetic fixture_identity");
+    }
+    const observedMs = Date.parse(observation.observed_at);
+    if (observedMs > atMs) throw new RangeError("observation occurs after simulation time");
+    if (observation.application_id !== policy.application_id || observation.reason_code !== policy.reason_code ||
+        (policy.route_id !== "*" && observation.route_id !== policy.route_id) ||
+        policy.excluded_route_ids.includes(observation.route_id) ||
+        observedMs <= atMs - policy.window_seconds * 1000 || seenIds.has(observation.event_id)) continue;
+    seenIds.add(observation.event_id);
+    const identityRef = policy.identity_scope === "source_ip" ? observation.source_ip : fixture;
+    counts.set(identityRef, (counts.get(identityRef) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([identityRef, count]) => {
+    const triggered = count >= policy.threshold;
+    return { policy_id: policy.policy_id, identity_scope: policy.identity_scope, identity_ref: identityRef,
+      hit_count: count, decision: !triggered ? "NONE" : policy.mode === "OBSERVE" ? "OBSERVE" : policy.action,
+      restriction_expires_at: triggered && policy.mode === "ENFORCE"
+        ? new Date(atMs + policy.restriction_seconds * 1000).toISOString() : null };
+  });
+}
+
 function normalizeEligibleIp(sourceIp) {
   if (!isEligibleSource(sourceIp)) return null;
   return isIP(sourceIp) === 6 ? new URL(`http://[${sourceIp}]/`).hostname.slice(1, -1) : sourceIp;

@@ -24,3 +24,27 @@ test('inspect and export include only validated policy, never observation data',
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('CLI validates and simulates identity policy v2 with synthetic fixture IDs', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'nodeguard-v2-cli-'));
+  try {
+    const policyPath = path.join(dir, 'identity-policy.json');
+    const exportPath = path.join(dir, 'export.json');
+    const fixturesPath = new URL('./examples/identity-observations.json', import.meta.url).pathname;
+    const policy = JSON.parse(await readFile(new URL('./examples/identity-policy.json', import.meta.url), 'utf8'));
+    await writeFile(policyPath, JSON.stringify(policy));
+    assert.match(execFileSync(process.execPath, [cli, 'policy', 'validate', policyPath], { encoding: 'utf8' }), /Valid policy v2/);
+    const doctor = JSON.parse(execFileSync(process.execPath, [cli, 'doctor', policyPath], { encoding: 'utf8' }));
+    assert.equal(doctor.policy_schema_version, 2);
+    const inspection = JSON.parse(execFileSync(process.execPath, [cli, 'inspect', policyPath], { encoding: 'utf8' }));
+    assert.equal(inspection.identity_scope, 'subject_id');
+    execFileSync(process.execPath, [cli, 'export', policyPath, '--output', exportPath]);
+    assert.deepEqual(JSON.parse(await readFile(exportPath, 'utf8')), policy);
+    const simulated = JSON.parse(execFileSync(process.execPath,
+      [cli, 'policy', 'test', policyPath, fixturesPath, '--at', '2026-11-04T06:00:00Z'], { encoding: 'utf8' }));
+    assert.equal(simulated.schema_version, 2);
+    assert.deepEqual(simulated.results.map((result) => [result.identity_ref, result.decision]), [['fixture:alice', 'OBSERVE']]);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

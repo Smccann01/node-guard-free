@@ -1,0 +1,14 @@
+{
+  "schema_version": 2,
+  "policy_id": "replay-by-user",
+  "application_id": "billing-api",
+  "mode": "OBSERVE",
+  "route_id": "*",
+  "excluded_route_ids": ["health.check"],
+  "reason_code": "replay_burst",
+  "identity_scope": "subject_id",
+  "window_seconds": 60,
+  "threshold": 2,
+  "action": "THROTTLE",
+  "restriction_seconds": 60
+}

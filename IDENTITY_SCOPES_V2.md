@@ -12,6 +12,15 @@ The separately imported `identity-policy` module adds per-user, per-tenant, and 
 
 ## Policy and app integration
 
+Validate and simulate the included synthetic fixtures before wiring a live application:
+
+```sh
+nodeguard policy validate examples/identity-policy.json
+nodeguard policy test examples/identity-policy.json examples/identity-observations.json --at 2026-11-04T06:00:00Z
+```
+
+The simulator accepts only `fixture:` identity labels for non-IP scopes. These labels are not runtime credentials or customer identifiers.
+
 ```js
 import { randomUUID } from 'node:crypto';
 import { createVerifiedIdentity, createIdentityGuardV2 } from '@network-decode/node-guard/identity-policy';

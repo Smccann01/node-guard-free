@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { readFile, stat, writeFile } from "node:fs/promises";
 import { simulatePolicyV1, validatePolicyV1 } from "../policy.mjs";
+import { simulateIdentityPolicyV2, validateIdentityPolicyV2 } from "../identity-policy.mjs";
 
 const usage = "Usage: nodeguard init [--output <policy.json>] | nodeguard doctor [policy.json] | nodeguard policy validate <policy.json> | nodeguard policy test <policy.json> <observations.json> --at <UTC timestamp> | nodeguard inspect <policy.json> | nodeguard export <policy.json> --output <file>";
 const examplePolicy = new URL("../examples/auth-policy.json", import.meta.url);
@@ -9,6 +10,10 @@ async function readJson(path) {
   const info = await stat(path);
   if (!info.isFile() || info.size > 1_048_576) throw new Error("input must be a JSON file no larger than 1 MiB");
   return JSON.parse(await readFile(path, "utf8"));
+}
+
+function validatePolicy(input) {
+  return input?.schema_version === 2 ? validateIdentityPolicyV2(input) : validatePolicyV1(input);
 }
 
 async function main(args) {
@@ -27,44 +32,49 @@ async function main(args) {
     const output = { node: process.version, runtime: "supported", source_trust: "not checked",
       state_scope: "one_process", multi_worker_consistency: "not provided" };
     if (args.length === 2) {
-      const policy = validatePolicyV1(await readJson(args[1]));
+      const policy = validatePolicy(await readJson(args[1]));
       output.policy_id = policy.policy_id;
       output.policy_mode = policy.mode;
+      output.policy_schema_version = policy.schema_version;
     }
     process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
     return;
   }
   if (args[0] === "inspect" && args.length === 2) {
-    const policy = validatePolicyV1(await readJson(args[1]));
-    process.stdout.write(`${JSON.stringify({ schema_version: 1, policy_id: policy.policy_id,
+    const policy = validatePolicy(await readJson(args[1]));
+    process.stdout.write(`${JSON.stringify({ schema_version: policy.schema_version, policy_id: policy.policy_id,
       application_id: policy.application_id, route_id: policy.route_id, mode: policy.mode,
       action: policy.action, threshold: policy.threshold, window_seconds: policy.window_seconds,
-      restriction_seconds: policy.restriction_seconds, state_scope: "one_process" }, null, 2)}\n`);
+      restriction_seconds: policy.restriction_seconds, state_scope: "one_process",
+      ...(policy.schema_version === 2 ? { identity_scope: policy.identity_scope, excluded_route_ids: policy.excluded_route_ids } : {}) }, null, 2)}\n`);
     return;
   }
   if (args[0] === "export" && args.length === 4 && args[2] === "--output") {
-    const policy = validatePolicyV1(await readJson(args[1]));
+    const policy = validatePolicy(await readJson(args[1]));
     if (!args[3] || args[3].startsWith("-")) throw new Error("choose an export output path");
     const exported = { schema_version: policy.schema_version, policy_id: policy.policy_id,
       application_id: policy.application_id, mode: policy.mode, route_id: policy.route_id,
       reason_code: policy.reason_code, window_seconds: policy.window_seconds,
       threshold: policy.threshold, action: policy.action,
-      restriction_seconds: policy.restriction_seconds };
+      restriction_seconds: policy.restriction_seconds,
+      ...(policy.schema_version === 2 ? { identity_scope: policy.identity_scope, excluded_route_ids: policy.excluded_route_ids } : {}) };
     await writeFile(args[3], `${JSON.stringify(exported, null, 2)}\n`, { flag: "wx", mode: 0o600 });
     process.stdout.write(`Exported policy without runtime events: ${args[3]}\n`);
     return;
   }
   if (args[0] !== "policy") throw new Error(usage);
   if (args[1] === "validate" && args.length === 3) {
-    const policy = validatePolicyV1(await readJson(args[2]));
-    process.stdout.write(`Valid policy v1: ${policy.policy_id}\n`);
+    const policy = validatePolicy(await readJson(args[2]));
+    process.stdout.write(`Valid policy v${policy.schema_version}: ${policy.policy_id}\n`);
     return;
   }
   if (args[1] === "test" && args.length === 6 && args[4] === "--at") {
-    const policy = await readJson(args[2]);
+    const policy = validatePolicy(await readJson(args[2]));
     const observations = await readJson(args[3]);
-    const results = simulatePolicyV1(policy, observations, { at: args[5] });
-    process.stdout.write(`${JSON.stringify({ schema_version: 1, results }, null, 2)}\n`);
+    const results = policy.schema_version === 2
+      ? simulateIdentityPolicyV2(policy, observations, { at: args[5] })
+      : simulatePolicyV1(policy, observations, { at: args[5] });
+    process.stdout.write(`${JSON.stringify({ schema_version: policy.schema_version, results }, null, 2)}\n`);
     return;
   }
   throw new Error(usage);

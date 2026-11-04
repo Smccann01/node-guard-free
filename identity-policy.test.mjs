@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createVerifiedIdentity, createIdentityGuardV2, validateIdentityObservationV2,
-  validateIdentityPolicyV2 } from "./identity-policy.mjs";
+  validateIdentityPolicyV2, simulateIdentityPolicyV2 } from "./identity-policy.mjs";
 import { createExpressIdentityGuardV2 } from "./identity-express.mjs";
 import { createNextIdentityGuardV2 } from "./identity-next-route.mjs";
 
@@ -23,6 +23,22 @@ test("v2 policy and observation reject ambiguity and network-supplied identity f
   assert.throws(() => validateIdentityObservationV2(event("event-001", { source_ip: "127.0.0.1" })), /eligible public IP/);
   assert.throws(() => createVerifiedIdentity({ subjectId: "user\nadmin" }), /bounded/);
   assert.throws(() => createVerifiedIdentity({}), /at least one/);
+});
+
+test("v2 simulation is deterministic and accepts synthetic identities only", () => {
+  const entries = [
+    { observation: event("event-001"), fixture_identity: "fixture:alice" },
+    { observation: event("event-002"), fixture_identity: "fixture:alice" },
+    { observation: event("event-002", { source_ip: "9.9.9.9" }), fixture_identity: "fixture:bob" },
+    { observation: event("event-003", { route_id: "health.check" }), fixture_identity: "fixture:alice" },
+  ];
+  const options = { at: "2026-11-04T06:00:00Z" };
+  const first = simulateIdentityPolicyV2(policy, entries, options);
+  assert.deepEqual(first, simulateIdentityPolicyV2(policy, entries, options));
+  assert.deepEqual(first.map((result) => [result.identity_ref, result.hit_count, result.decision]),
+    [["fixture:alice", 2, "THROTTLE"]]);
+  assert.throws(() => simulateIdentityPolicyV2(policy, [{ observation: event("event-001"), fixture_identity: "alice@example.com" }], options), /synthetic/);
+  assert.throws(() => simulateIdentityPolicyV2(policy, entries, { at: "2026-02-31T06:00:00Z" }), /valid UTC/);
 });
 
 test("two authenticated subjects behind the same IP remain isolated; forged JSON context fails", async () => {
