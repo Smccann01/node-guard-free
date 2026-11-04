@@ -1,0 +1,55 @@
+import type { ObservationV1, PolicyV1 } from './policy.js';
+import type { IdentityObservationV2, IdentityPolicyV2 } from './identity-policy.js';
+
+export type ReplayEventV1 = Readonly<{
+  event_id: string;
+  observed_at: string;
+  source_ip?: string;
+  source_ref?: string;
+  accepted: boolean;
+  record_action: 'recorded' | 'OBSERVE' | 'THROTTLE' | 'DENY' | 'REJECTED';
+  trigger_hit_count: number | null;
+  rejection_reason?: string;
+  effective_action: 'ALLOW' | 'THROTTLE' | 'DENY';
+  restriction_expires_at: string | null;
+}>;
+
+export declare function replayPolicyV1(options: {
+  policy: PolicyV1;
+  observations: ObservationV1[];
+  at: string;
+  protectedSources?: string[];
+  redactSources?: boolean;
+}): Readonly<{
+  schema_version: 1;
+  policy_id: string;
+  application_id: string;
+  policy_fingerprint_sha256: string;
+  policy_mode: 'OBSERVE' | 'ENFORCE';
+  replay_at: string;
+  event_count: number;
+  source_representation: 'ip' | 'pseudonym';
+  timeline: ReplayEventV1[];
+  active_restrictions: Array<{ source_ip?: string; source_ref?: string; action: 'THROTTLE' | 'DENY'; expires_at: string }>;
+  enforcement_scope: 'simulation_only';
+}>;
+
+export declare function replayIdentityPolicyV2(options: {
+  policy: IdentityPolicyV2;
+  entries: Array<{ observation: IdentityObservationV2; fixture_identity?: string }>;
+  at: string;
+  protectedSources?: string[];
+  redactSources?: boolean;
+}): Readonly<{
+  schema_version: 2;
+  policy_id: string;
+  application_id: string;
+  policy_fingerprint_sha256: string;
+  policy_mode: 'OBSERVE' | 'ENFORCE';
+  replay_at: string;
+  event_count: number;
+  source_representation: 'ip' | 'pseudonym';
+  timeline: Array<ReplayEventV1 & { identity_scope: string; identity_ref: string }>;
+  active_restrictions: Array<{ identity_scope: string; identity_ref: string; action: 'THROTTLE' | 'DENY'; expires_at: string }>;
+  enforcement_scope: 'simulation_only';
+}>;

@@ -2,8 +2,10 @@
 import { readFile, stat, writeFile } from "node:fs/promises";
 import { simulatePolicyV1, validatePolicyV1 } from "../policy.mjs";
 import { simulateIdentityPolicyV2, validateIdentityPolicyV2 } from "../identity-policy.mjs";
+import { replayIdentityPolicyV2, replayPolicyV1 } from "../replay-policy.mjs";
+import { comparePolicySimulation, diffPolicies } from "../policy-diff.mjs";
 
-const usage = "Usage: nodeguard init [--output <policy.json>] | nodeguard doctor [policy.json] | nodeguard policy validate <policy.json> | nodeguard policy test <policy.json> <observations.json> --at <UTC timestamp> | nodeguard inspect <policy.json> | nodeguard export <policy.json> --output <file>";
+const usage = "Usage: nodeguard init [--output <policy.json>] | nodeguard doctor [policy.json] | nodeguard policy validate <policy.json> | nodeguard policy diff <current-policy.json> <proposed-policy.json> | nodeguard policy compare <current-policy.json> <proposed-policy.json> <observations.json> --at <UTC timestamp> [--redact] | nodeguard policy test <policy.json> <observations.json> --at <UTC timestamp> | nodeguard replay <policy.json> <observations.json> --at <UTC timestamp> [--protected <source-ips.json>] [--redact] | nodeguard inspect <policy.json> | nodeguard export <policy.json> --output <file>";
 const examplePolicy = new URL("../examples/auth-policy.json", import.meta.url);
 
 async function readJson(path) {
@@ -62,10 +64,44 @@ async function main(args) {
     process.stdout.write(`Exported policy without runtime events: ${args[3]}\n`);
     return;
   }
+  if (args[0] === "replay" && args.length >= 5 && args[3] === "--at") {
+    const policy = validatePolicy(await readJson(args[1]));
+    let position = 5;
+    let protectedSources = [];
+    let hasProtectedSources = false;
+    if (args[position] === "--protected" && typeof args[position + 1] === "string") {
+      protectedSources = await readJson(args[position + 1]);
+      hasProtectedSources = true;
+      position += 2;
+    }
+    const redactSources = args[position] === "--redact";
+    if (redactSources) position += 1;
+    if (position !== args.length) throw new Error(usage);
+    if (policy.mode === "ENFORCE" && !hasProtectedSources) {
+      throw new Error("ENFORCE replay requires --protected <source-ips.json>; use [] if none apply");
+    }
+    const input = await readJson(args[2]);
+    const result = policy.schema_version === 2
+      ? replayIdentityPolicyV2({ policy, entries: input, at: args[4], protectedSources, redactSources })
+      : replayPolicyV1({ policy, observations: input, at: args[4], protectedSources, redactSources });
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return;
+  }
   if (args[0] !== "policy") throw new Error(usage);
   if (args[1] === "validate" && args.length === 3) {
     const policy = validatePolicy(await readJson(args[2]));
     process.stdout.write(`Valid policy v${policy.schema_version}: ${policy.policy_id}\n`);
+    return;
+  }
+  if (args[1] === "diff" && args.length === 4) {
+    const result = diffPolicies(await readJson(args[2]), await readJson(args[3]));
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return;
+  }
+  if (args[1] === "compare" && (args.length === 7 || (args.length === 8 && args[7] === "--redact")) && args[5] === "--at") {
+    const result = comparePolicySimulation(await readJson(args[2]), await readJson(args[3]),
+      await readJson(args[4]), { at: args[6], redactSources: args[7] === "--redact" });
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     return;
   }
   if (args[1] === "test" && args.length === 6 && args[4] === "--at") {

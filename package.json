@@ -1,6 +1,6 @@
 {
   "name": "@network-decode/node-guard",
-  "version": "0.2.0-alpha.10",
+  "version": "0.2.0-alpha.11",
   "license": "Apache-2.0",
   "type": "module",
   "repository": {
@@ -17,8 +17,11 @@
     "CHANGELOG.md",
     "DEVELOPER_SETUP.md",
     "NEXT_ROUTE_GUIDE.md",
+    "REPLAY.md",
     "IDENTITY_SCOPES_V2.md",
     "LOCAL_API.md",
+    "POLICY_STUDIO.md",
+    "WEBHOOK_SHIELD.md",
     "RELEASE.md",
     "REPRODUCE.md",
     "index.mjs",
@@ -30,6 +33,8 @@
     "policy.d.ts",
     "policy-runtime.mjs",
     "policy-runtime.d.ts",
+    "replay-policy.mjs",
+    "replay-policy.d.ts",
     "trusted-source.mjs",
     "trusted-source.d.ts",
     "next-route.mjs",
@@ -42,11 +47,16 @@
     "identity-next-route.d.ts",
     "local-api.mjs",
     "local-api.d.ts",
+    "policy-diff.mjs",
+    "policy-diff.d.ts",
+    "webhook-shield.mjs",
+    "webhook-shield.d.ts",
     "bin/nodeguard.mjs",
     "examples/auth-policy.json",
     "examples/auth-observations.json",
     "examples/identity-policy.json",
     "examples/identity-observations.json",
+    "examples/security-tools-workflow.mjs",
     "LICENSE",
     "SECURITY.md",
     "CONTRIBUTING.md"
@@ -67,6 +77,10 @@
     "./policy-runtime": {
       "types": "./policy-runtime.d.ts",
       "default": "./policy-runtime.mjs"
+    },
+    "./replay-policy": {
+      "types": "./replay-policy.d.ts",
+      "default": "./replay-policy.mjs"
     },
     "./trusted-source": {
       "types": "./trusted-source.d.ts",
@@ -91,6 +105,14 @@
     "./local-api": {
       "types": "./local-api.d.ts",
       "default": "./local-api.mjs"
+    },
+    "./policy-diff": {
+      "types": "./policy-diff.d.ts",
+      "default": "./policy-diff.mjs"
+    },
+    "./webhook-shield": {
+      "types": "./webhook-shield.d.ts",
+      "default": "./webhook-shield.mjs"
     },
     "./package.json": "./package.json"
   },

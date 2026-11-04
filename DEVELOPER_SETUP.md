@@ -1,6 +1,6 @@
 # Developer setup
 
-1. Use Node.js 20 or newer in a persistent Node process. Install `@network-decode/node-guard@0.2.0-alpha.10` and run `npx nodeguard init`.
+1. Use Node.js 20 or newer in a persistent Node process. Install a verified npm version of `@network-decode/node-guard` and run `npx nodeguard init`.
 2. Run `npx nodeguard doctor nodeguard.policy.json`. The `source_trust: not checked` result means the CLI cannot verify your ingress topology.
 3. Inspect the generated OBSERVE policy. Set `application_id` and `route_id` to stable identifiers. Keep `mode` as `OBSERVE` until normal traffic has been reviewed.
 4. Determine the actual socket peer address. If a reverse proxy is used, list each trusted proxy IP in `createTrustedSourceResolver({ trustedProxyIps })`. Never trust `X-Forwarded-For` from an unlisted peer.
