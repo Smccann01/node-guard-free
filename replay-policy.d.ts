@@ -3,7 +3,8 @@ import type { ObservationV1, PolicyV1 } from './policy.js';
 export type ReplayEventV1 = Readonly<{
   event_id: string;
   observed_at: string;
-  source_ip: string;
+  source_ip?: string;
+  source_ref?: string;
   accepted: boolean;
   record_action: 'recorded' | 'OBSERVE' | 'THROTTLE' | 'DENY' | 'REJECTED';
   rejection_reason?: string;
@@ -16,6 +17,7 @@ export declare function replayPolicyV1(options: {
   observations: ObservationV1[];
   at: string;
   protectedSources?: string[];
+  redactSources?: boolean;
 }): Readonly<{
   schema_version: 1;
   policy_id: string;
@@ -24,7 +26,8 @@ export declare function replayPolicyV1(options: {
   policy_mode: 'OBSERVE' | 'ENFORCE';
   replay_at: string;
   event_count: number;
+  source_representation: 'ip' | 'pseudonym';
   timeline: ReplayEventV1[];
-  active_restrictions: Array<{ source_ip: string; action: 'THROTTLE' | 'DENY'; expires_at: string }>;
+  active_restrictions: Array<{ source_ip?: string; source_ref?: string; action: 'THROTTLE' | 'DENY'; expires_at: string }>;
   enforcement_scope: 'simulation_only';
 }>;

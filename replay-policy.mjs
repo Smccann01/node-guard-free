@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { normalizeEligibleSource } from './guard-core.mjs';
 import { validateObservationV1, validatePolicyV1 } from './policy.mjs';
 import { createPolicyGuardV1 } from './policy-runtime.mjs';
@@ -26,8 +26,9 @@ function utcMilliseconds(value, name) {
 }
 
 /** Replays v1 observations in memory. Never opens a socket or applies host enforcement. */
-export function replayPolicyV1({ policy: inputPolicy, observations, at, protectedSources = [] } = {}) {
+export function replayPolicyV1({ policy: inputPolicy, observations, at, protectedSources = [], redactSources = false } = {}) {
   const policy = validatePolicyV1(inputPolicy);
+  if (typeof redactSources !== 'boolean') throw new TypeError('redactSources must be a boolean');
   if (!Array.isArray(observations) || observations.length > MAX_EVENTS) {
     throw new RangeError(`observations must be an array of at most ${MAX_EVENTS} events`);
   }
@@ -38,6 +39,10 @@ export function replayPolicyV1({ policy: inputPolicy, observations, at, protecte
   }
   const replayAt = utcMilliseconds(at, 'at');
   const protectedSet = new Set(protectedSources.map(normalizeEligibleSource));
+  const redactionKey = redactSources ? randomBytes(32) : null;
+  const sourceField = (sourceIp) => redactionKey
+    ? { source_ref: `source-${createHmac('sha256', redactionKey).update(sourceIp).digest('hex').slice(0, 24)}` }
+    : { source_ip: sourceIp };
   let now = replayAt;
   let previousTime = -Infinity;
   const guard = createPolicyGuardV1({ policy, now: () => now,
@@ -57,7 +62,7 @@ export function replayPolicyV1({ policy: inputPolicy, observations, at, protecte
     timeline.push({
       event_id: observation.event_id,
       observed_at: observation.observed_at,
-      source_ip: observation.source_ip,
+      ...sourceField(observation.source_ip),
       accepted: result.accepted,
       record_action: result.accepted ? result.action : 'REJECTED',
       ...(result.accepted ? {} : { rejection_reason: result.reason }),
@@ -68,10 +73,10 @@ export function replayPolicyV1({ policy: inputPolicy, observations, at, protecte
 
   now = replayAt;
   const activeRestrictions = guard.snapshot().map((entry) => ({
-    source_ip: entry.sourceIp,
+    ...sourceField(entry.sourceIp),
     action: entry.action,
     expires_at: entry.expiresAt,
-  })).sort((a, b) => a.source_ip.localeCompare(b.source_ip));
+  })).sort((a, b) => (a.source_ref ?? a.source_ip).localeCompare(b.source_ref ?? b.source_ip));
   return {
     schema_version: 1,
     policy_id: policy.policy_id,
@@ -80,6 +85,7 @@ export function replayPolicyV1({ policy: inputPolicy, observations, at, protecte
     policy_mode: policy.mode,
     replay_at: new Date(replayAt).toISOString(),
     event_count: timeline.length,
+    source_representation: redactSources ? 'pseudonym' : 'ip',
     timeline,
     active_restrictions: activeRestrictions,
     enforcement_scope: 'simulation_only',

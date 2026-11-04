@@ -43,6 +43,17 @@ test('policy fingerprint is stable across key order and changes when behavior ch
   assert.notEqual(baseline.policy_fingerprint_sha256, changed.policy_fingerprint_sha256);
 });
 
+test('redacted replay keeps one alias per source without exposing source IPs', () => {
+  const report = replayPolicyV1({ policy, observations: [first, second],
+    at: '2026-11-04T10:00:20Z', redactSources: true });
+  assert.equal(report.source_representation, 'pseudonym');
+  assert.match(report.timeline[0].source_ref, /^source-[a-f0-9]{24}$/);
+  assert.equal(report.timeline[0].source_ref, report.timeline[1].source_ref);
+  assert.equal(report.timeline[1].source_ref, report.active_restrictions[0].source_ref);
+  assert.equal(report.timeline[0].source_ip, undefined);
+  assert.equal(JSON.stringify(report).includes('8.8.8.8'), false);
+});
+
 test('replay preserves duplicate and protected-source rejection', () => {
   const replay = replayPolicyV1({ policy, observations: [first, first, second,
     event('event-003', '2026-11-04T10:00:02Z', '1.1.1.1')],
@@ -102,6 +113,10 @@ test('CLI requires an explicit protected-source file for ENFORCE replay', () => 
       '--at', '2026-11-04T10:00:20Z', '--protected', protectedPath], { encoding: 'utf8' }));
     assert.equal(output.active_restrictions.length, 1);
     assert.equal(output.enforcement_scope, 'simulation_only');
+    const redacted = execFileSync(process.execPath, [cli, 'replay', policyPath, eventsPath,
+      '--at', '2026-11-04T10:00:20Z', '--protected', protectedPath, '--redact'], { encoding: 'utf8' });
+    assert.equal(redacted.includes('8.8.8.8'), false);
+    assert.equal(JSON.parse(redacted).source_representation, 'pseudonym');
     assert.deepEqual(JSON.parse(readFileSync(protectedPath, 'utf8')), []);
   } finally {
     rmSync(root, { recursive: true, force: true });

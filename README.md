@@ -63,7 +63,7 @@ This package stores no request bodies, tokens, or passwords in the standalone en
 - `nodeguard doctor [policy.json]`
 - `nodeguard policy validate policy.json`
 - `nodeguard policy test policy.json observations.json --at 2026-11-03T18:00:00Z`
-- `nodeguard replay policy.json observations.json --at 2026-11-03T18:00:00Z [--protected source-ips.json]` (source candidate)
+- `nodeguard replay policy.json observations.json --at 2026-11-03T18:00:00Z [--protected source-ips.json] [--redact]` (source candidate)
 - `nodeguard inspect policy.json`
 - `nodeguard export policy.json --output sanitized-policy.json`
 
