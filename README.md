@@ -45,7 +45,7 @@ const guard = createPolicyGuardV1({ policy, canActOnSource: (ip) => !protectedIp
 //   source_ip: verifiedSourceIp, protocol: 'HTTPS' });
 ```
 
-See [developer setup](DEVELOPER_SETUP.md), [Next route guide](NEXT_ROUTE_GUIDE.md), and [independent alpha check](REPRODUCE.md) for integration and reproduction steps. `nodeguard policy test` simulates decisions at a specified timestamp.
+See [developer setup](DEVELOPER_SETUP.md), [Next route guide](NEXT_ROUTE_GUIDE.md), and [independent alpha check](REPRODUCE.md) for integration and reproduction steps. `nodeguard policy test` simulates decisions at a specified timestamp. The [policy review candidate](POLICY_STUDIO.md) compares a current and proposed policy without activating either one.
 
 ## Security model
 
@@ -58,6 +58,7 @@ This package stores no request bodies, tokens, or passwords in the standalone en
 - `nodeguard init [--output file]`
 - `nodeguard doctor [policy.json]`
 - `nodeguard policy validate policy.json`
+- `nodeguard policy diff current-policy.json proposed-policy.json`
 - `nodeguard policy test policy.json observations.json --at 2026-11-03T18:00:00Z`
 - `nodeguard inspect policy.json`
 - `nodeguard export policy.json --output sanitized-policy.json`

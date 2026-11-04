@@ -2,8 +2,9 @@
 import { readFile, stat, writeFile } from "node:fs/promises";
 import { simulatePolicyV1, validatePolicyV1 } from "../policy.mjs";
 import { simulateIdentityPolicyV2, validateIdentityPolicyV2 } from "../identity-policy.mjs";
+import { diffPolicies } from "../policy-diff.mjs";
 
-const usage = "Usage: nodeguard init [--output <policy.json>] | nodeguard doctor [policy.json] | nodeguard policy validate <policy.json> | nodeguard policy test <policy.json> <observations.json> --at <UTC timestamp> | nodeguard inspect <policy.json> | nodeguard export <policy.json> --output <file>";
+const usage = "Usage: nodeguard init [--output <policy.json>] | nodeguard doctor [policy.json] | nodeguard policy validate <policy.json> | nodeguard policy diff <current-policy.json> <proposed-policy.json> | nodeguard policy test <policy.json> <observations.json> --at <UTC timestamp> | nodeguard inspect <policy.json> | nodeguard export <policy.json> --output <file>";
 const examplePolicy = new URL("../examples/auth-policy.json", import.meta.url);
 
 async function readJson(path) {
@@ -66,6 +67,11 @@ async function main(args) {
   if (args[1] === "validate" && args.length === 3) {
     const policy = validatePolicy(await readJson(args[2]));
     process.stdout.write(`Valid policy v${policy.schema_version}: ${policy.policy_id}\n`);
+    return;
+  }
+  if (args[1] === "diff" && args.length === 4) {
+    const result = diffPolicies(await readJson(args[2]), await readJson(args[3]));
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     return;
   }
   if (args[1] === "test" && args.length === 6 && args[4] === "--at") {
