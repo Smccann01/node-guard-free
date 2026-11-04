@@ -29,6 +29,7 @@ try {
   await writeFile(smokePath, `
 import { createNodeGuard } from '@network-decode/node-guard';
 import { createPolicyGuardV1 } from '@network-decode/node-guard/policy-runtime';
+import { replayIdentityPolicyV2, replayPolicyV1 } from '@network-decode/node-guard/replay-policy';
 import { createTrustedSourceResolver } from '@network-decode/node-guard/trusted-source';
 import { createNextRouteGuard } from '@network-decode/node-guard/next-route';
 import { createVerifiedIdentity, createIdentityGuardV2 } from '@network-decode/node-guard/identity-policy';
@@ -43,6 +44,17 @@ const at = Date.parse('2026-11-03T18:00:00Z');
 const guard = createPolicyGuardV1({ policy, now: () => at, canActOnSource: () => true });
 for (const event_id of ['event-001', 'event-002']) guard.record({ schema_version: 1, application_id: 'billing-api', event_id, observed_at: '2026-11-03T18:00:00Z', route_id: 'auth.login', reason_code: 'authentication_failure', source_ip: '8.8.8.8', protocol: 'HTTPS' });
 if (!guard.isBlocked('8.8.8.8')) process.exit(3);
+const replay = replayPolicyV1({ policy, observations: ['event-001', 'event-002'].map((event_id) => ({
+  schema_version: 1, application_id: 'billing-api', event_id, observed_at: '2026-11-03T18:00:00Z',
+  route_id: 'auth.login', reason_code: 'authentication_failure', source_ip: '8.8.8.8', protocol: 'HTTPS',
+})), at: '2026-11-03T18:00:01Z', protectedSources: [] });
+if (replay.enforcement_scope !== 'simulation_only' || replay.active_restrictions.length !== 1) process.exit(8);
+const identityReplay = replayIdentityPolicyV2({ policy: { ...policy, schema_version: 2, identity_scope: 'subject_id' },
+  entries: ['event-005', 'event-006'].map((event_id) => ({ observation: {
+    schema_version: 2, application_id: 'billing-api', event_id, observed_at: '2026-11-03T18:00:00Z',
+    route_id: 'auth.login', reason_code: 'authentication_failure', source_ip: '8.8.8.8', protocol: 'HTTPS',
+  }, fixture_identity: 'fixture:member_01' })), at: '2026-11-03T18:00:01Z' });
+if (identityReplay.enforcement_scope !== 'simulation_only' || identityReplay.active_restrictions.length !== 1) process.exit(9);
 const routeCheck = createNextRouteGuard({ guard, getVerifiedSourceIp: () => '8.8.8.8' });
 if ((await routeCheck(new Request('https://example.test/api/login')))?.status !== 429) process.exit(4);
 const identity = createVerifiedIdentity({ subjectId: 'member-01' });
@@ -51,7 +63,7 @@ for (const event_id of ['event-003', 'event-004']) v2.record({ schema_version: 2
 if (!v2.isBlocked({ sourceIp: '8.8.8.8', routeId: 'auth.login', identity })) process.exit(5);
 `);
   execFileSync(process.execPath, [smokePath], { stdio: "pipe" });
-  process.stdout.write("Clean tarball install passed: CLI, OBSERVE default, local Guard, v1 and v2 runtimes, trusted source, Next route export.\n");
+  process.stdout.write("Clean tarball install passed: CLI, OBSERVE default, local Guard, v1 and v2 runtimes and replay, trusted source, Next route export.\n");
 } finally {
   await rm(temporaryRoot, { recursive: true, force: true });
 }

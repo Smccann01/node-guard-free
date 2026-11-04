@@ -17,6 +17,7 @@
     "CHANGELOG.md",
     "DEVELOPER_SETUP.md",
     "NEXT_ROUTE_GUIDE.md",
+    "REPLAY.md",
     "IDENTITY_SCOPES_V2.md",
     "LOCAL_API.md",
     "RELEASE.md",
@@ -30,6 +31,8 @@
     "policy.d.ts",
     "policy-runtime.mjs",
     "policy-runtime.d.ts",
+    "replay-policy.mjs",
+    "replay-policy.d.ts",
     "trusted-source.mjs",
     "trusted-source.d.ts",
     "next-route.mjs",
@@ -67,6 +70,10 @@
     "./policy-runtime": {
       "types": "./policy-runtime.d.ts",
       "default": "./policy-runtime.mjs"
+    },
+    "./replay-policy": {
+      "types": "./replay-policy.d.ts",
+      "default": "./replay-policy.mjs"
     },
     "./trusted-source": {
       "types": "./trusted-source.d.ts",
