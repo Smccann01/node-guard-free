@@ -31,6 +31,7 @@ import { createNodeGuard } from '@network-decode/node-guard';
 import { createPolicyGuardV1 } from '@network-decode/node-guard/policy-runtime';
 import { createTrustedSourceResolver } from '@network-decode/node-guard/trusted-source';
 import { createNextRouteGuard } from '@network-decode/node-guard/next-route';
+import { createVerifiedIdentity, createIdentityGuardV2 } from '@network-decode/node-guard/identity-policy';
 const source = createTrustedSourceResolver({ trustedProxyIps: ['127.0.0.1'] });
 if (source({ socket: { remoteAddress: '127.0.0.1' }, headers: { 'x-forwarded-for': '1.1.1.1, 8.8.8.8' } }) !== '8.8.8.8') process.exit(1);
 const free = createNodeGuard({ mode: 'enforce', thresholds: { replay_burst: 2 }, canActOnSource: () => true });
@@ -44,9 +45,13 @@ for (const event_id of ['event-001', 'event-002']) guard.record({ schema_version
 if (!guard.isBlocked('8.8.8.8')) process.exit(3);
 const routeCheck = createNextRouteGuard({ guard, getVerifiedSourceIp: () => '8.8.8.8' });
 if ((await routeCheck(new Request('https://example.test/api/login')))?.status !== 429) process.exit(4);
+const identity = createVerifiedIdentity({ subjectId: 'member-01' });
+const v2 = createIdentityGuardV2({ policy: { ...policy, schema_version: 2, identity_scope: 'subject_id' }, now: () => at, canActOnSource: () => true });
+for (const event_id of ['event-003', 'event-004']) v2.record({ schema_version: 2, application_id: 'billing-api', event_id, observed_at: '2026-11-03T18:00:00Z', route_id: 'auth.login', reason_code: 'authentication_failure', source_ip: '8.8.8.8', protocol: 'HTTPS' }, identity);
+if (!v2.isBlocked({ sourceIp: '8.8.8.8', routeId: 'auth.login', identity })) process.exit(5);
 `);
   execFileSync(process.execPath, [smokePath], { stdio: "pipe" });
-  process.stdout.write("Clean tarball install passed: CLI, OBSERVE default, local Guard, v1 runtime, trusted source, Next route export.\n");
+  process.stdout.write("Clean tarball install passed: CLI, OBSERVE default, local Guard, v1 and v2 runtimes, trusted source, Next route export.\n");
 } finally {
   await rm(temporaryRoot, { recursive: true, force: true });
 }

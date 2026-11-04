@@ -4,6 +4,9 @@ import { createNextRouteGuard } from '@network-decode/node-guard/next-route';
 import { createPolicyGuardV1 } from '@network-decode/node-guard/policy-runtime';
 import type { PolicyV1, ObservationV1 } from '@network-decode/node-guard/policy';
 import { createTrustedSourceResolver } from '@network-decode/node-guard/trusted-source';
+import { createVerifiedIdentity, createIdentityGuardV2, type IdentityPolicyV2 } from '@network-decode/node-guard/identity-policy';
+import { createExpressIdentityGuardV2 } from '@network-decode/node-guard/identity-express';
+import { createNextIdentityGuardV2 } from '@network-decode/node-guard/identity-next-route';
 
 const guard: GuardInstance = createNodeGuard({ mode: 'observe' });
 const policy: PolicyV1 = {
@@ -22,3 +25,13 @@ const resolveSource = createTrustedSourceResolver();
 const express = createExpressNodeGuard({ guard, getVerifiedSourceIp: () => '8.8.8.8' });
 const next = createNextRouteGuard({ guard, getVerifiedSourceIp: () => '8.8.8.8' });
 void [express, next, resolveSource];
+const identityPolicy: IdentityPolicyV2 = { ...policy, schema_version: 2, identity_scope: 'subject_id' };
+const identity = createVerifiedIdentity({ subjectId: 'member-01' });
+const identityGuard = createIdentityGuardV2({ policy: identityPolicy });
+identityGuard.record({ ...observation, schema_version: 2 }, identity);
+identityGuard.restriction({ sourceIp: '8.8.8.8', routeId: 'auth.login', identity });
+const identityExpress = createExpressIdentityGuardV2({ guard: identityGuard,
+  getVerifiedSourceIp: () => '8.8.8.8', getRouteId: () => 'auth.login', getVerifiedIdentity: () => identity });
+const identityNext = createNextIdentityGuardV2({ guard: identityGuard,
+  getVerifiedSourceIp: () => '8.8.8.8', getRouteId: () => 'auth.login', getVerifiedIdentity: () => identity });
+void [identityExpress, identityNext];

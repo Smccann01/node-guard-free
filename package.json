@@ -1,6 +1,6 @@
 {
   "name": "@network-decode/node-guard",
-  "version": "0.2.0-alpha.6",
+  "version": "0.2.0-alpha.8",
   "license": "Apache-2.0",
   "type": "module",
   "repository": {
@@ -16,6 +16,7 @@
     "README.md",
     "DEVELOPER_SETUP.md",
     "NEXT_ROUTE_GUIDE.md",
+    "IDENTITY_SCOPES_V2.md",
     "index.mjs",
     "index.d.ts",
     "guard-core.mjs",
@@ -29,6 +30,12 @@
     "trusted-source.d.ts",
     "next-route.mjs",
     "next-route.d.ts",
+    "identity-policy.mjs",
+    "identity-policy.d.ts",
+    "identity-express.mjs",
+    "identity-express.d.ts",
+    "identity-next-route.mjs",
+    "identity-next-route.d.ts",
     "bin/nodeguard.mjs",
     "examples/auth-policy.json",
     "examples/auth-observations.json",
@@ -60,6 +67,18 @@
     "./next-route": {
       "types": "./next-route.d.ts",
       "default": "./next-route.mjs"
+    },
+    "./identity-policy": {
+      "types": "./identity-policy.d.ts",
+      "default": "./identity-policy.mjs"
+    },
+    "./identity-express": {
+      "types": "./identity-express.d.ts",
+      "default": "./identity-express.mjs"
+    },
+    "./identity-next-route": {
+      "types": "./identity-next-route.d.ts",
+      "default": "./identity-next-route.mjs"
     },
     "./package.json": "./package.json"
   },
