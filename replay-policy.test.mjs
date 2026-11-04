@@ -75,6 +75,19 @@ test('redacted replay keeps one alias per source without exposing source IPs', (
   assert.equal(JSON.stringify(report).includes('8.8.8.8'), false);
 });
 
+test('redacted replay uses one alias for equivalent IPv6 spellings', () => {
+  const expanded = '2606:4700:4700:0:0:0:0:1111';
+  const compact = '2606:4700:4700::1111';
+  const report = replayPolicyV1({ policy,
+    observations: [event('event-201', first.observed_at, expanded),
+      event('event-202', second.observed_at, compact)],
+    at: '2026-11-04T10:00:20Z', redactSources: true });
+  assert.equal(report.timeline[0].source_ref, report.timeline[1].source_ref);
+  assert.equal(report.timeline[1].source_ref, report.active_restrictions[0].source_ref);
+  assert.equal(JSON.stringify(report).includes(expanded), false);
+  assert.equal(JSON.stringify(report).includes(compact), false);
+});
+
 test('replay preserves duplicate and protected-source rejection', () => {
   const replay = replayPolicyV1({ policy, observations: [first, first, second,
     event('event-003', '2026-11-04T10:00:02Z', '1.1.1.1')],
