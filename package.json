@@ -1,9 +1,17 @@
 {
   "name": "@network-decode/node-guard",
   "version": "0.2.0-alpha.6",
-  "private": true,
   "license": "Apache-2.0",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Smccann01/node-guard-free.git"
+  },
+  "homepage": "https://github.com/Smccann01/node-guard-free#readme",
+  "bugs": "https://github.com/Smccann01/node-guard-free/issues",
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "README.md",
     "DEVELOPER_SETUP.md",
@@ -55,16 +63,20 @@
     },
     "./package.json": "./package.json"
   },
-  "bin": { "nodeguard": "./bin/nodeguard.mjs" },
+  "bin": {
+    "nodeguard": "bin/nodeguard.mjs"
+  },
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "test": "node --test",
+    "typecheck": "tsc --noEmit --strict --module NodeNext --moduleResolution NodeNext --target ES2022 --lib ES2022,DOM scripts/types-smoke.mts",
     "smoke:package": "node scripts/clean-install-smoke.mjs",
     "smoke:next": "node scripts/next-clean-app-smoke.mjs"
   },
   "devDependencies": {
-    "express": "^5.3.0"
+    "express": "^5.3.0",
+    "typescript": "5.9.3"
   }
 }

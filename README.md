@@ -2,7 +2,7 @@
 
 Node Guard Free is a local application protection SDK for Node.js. It requires no account, license key, HoneyMesh agent, root access, or subscription. It does not attach XDP, enforce host firewall rules, or participate in Exchange.
 
-**Status:** alpha source candidate. The npm package is not published yet. The standalone SDK is being prepared for a public release; the current source is not a promise of production support.
+**Status:** experimental alpha for evaluation. This release is not a promise of production support.
 
 ## Supported scope
 
@@ -14,16 +14,16 @@ Node Guard Free is a local application protection SDK for Node.js. It requires n
 
 ## Quick start
 
-For local evaluation, clone this repository, run `npm ci`, `npm test`, and `npm run smoke:package`. When the npm package is published, the installation path will be:
+Install the published alpha with:
 
 ```sh
-npm install @network-decode/node-guard
+npm install @network-decode/node-guard@0.2.0-alpha.6
 npx nodeguard init
 npx nodeguard doctor nodeguard.policy.json
 npx nodeguard policy validate nodeguard.policy.json
 ```
 
-`init` writes an OBSERVE policy with permissions `0600` and refuses to overwrite an existing file. Review the application ID, route, source trust, and exclusions before enabling ENFORCE.
+For source evaluation, clone this repository, run `npm ci`, `npm test`, `npm run typecheck`, and `npm run smoke:package`. `init` writes an OBSERVE policy with permissions `0600` and refuses to overwrite an existing file. Review the application ID, route, source trust, and exclusions before enabling ENFORCE.
 
 A direct application decision can be created with the v1 engine:
 
