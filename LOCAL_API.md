@@ -18,6 +18,8 @@ All methods return JSON with `Cache-Control: no-store`. Request bodies are cappe
 
 Workers under the coordinator's Unix user can use `createLocalNodeGuardClient` from `@network-decode/node-guard/local-client` to submit observations and evaluate the shared coordinator state. An unavailable coordinator rejects the client promise; the application must decide its own explicit unavailable behavior and monitor it. The client does not infer source identity, does not open TCP, and does not turn an API response into an HTTP status automatically. The coordinator itself remains one process; restart loses state. This is one-host multi-worker coordination, not a shared store across hosts or serverless replicas.
 
+The optional `@network-decode/node-guard/local-express` middleware maps a coordinator response to Express `next()`, HTTP 429, or HTTP 403. A missing trusted source, bad route mapping, or unavailable coordinator returns HTTP 503; it does not silently allow the request. Mount it only after trusted ingress and route mapping are configured. It does not submit observations automatically.
+
 An application worker can call the client after its own trusted ingress has identified the source. For example, an Express handler can map a coordinator decision to an application response:
 
 ```js
@@ -45,5 +47,17 @@ app.use(async (req, res, next) => {
 ```
 
 The example assumes the application has already reviewed `getVerifiedSourceIp` and `getVerifiedRouteId` and supplied the credential securely. A restriction for `auth.login` does not affect an unrelated route. It does not automatically convert arbitrary HTTP events into hostile observations. Separate application code decides which authenticated events to submit with `client.record(observation)`.
+
+For Express, the packaged adapter can replace the example's `app.use` callback:
+
+```js
+import { createLocalExpressNodeGuard } from '@network-decode/node-guard/local-express';
+
+app.use(createLocalExpressNodeGuard({
+  client,
+  getVerifiedSourceIp,
+  getVerifiedRouteId,
+}));
+```
 
 Rollback is a reviewed policy file change to OBSERVE and application restart, or a scoped release through the management API. A durable audit store, Linux peer UID verification, and a browser console require separate qualification.

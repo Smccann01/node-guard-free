@@ -33,7 +33,10 @@ import { createTrustedSourceResolver } from '@network-decode/node-guard/trusted-
 import { createNextRouteGuard } from '@network-decode/node-guard/next-route';
 import { createVerifiedIdentity, createIdentityGuardV2 } from '@network-decode/node-guard/identity-policy';
 import { createLocalNodeGuardClient } from '@network-decode/node-guard/local-client';
+import { createLocalExpressNodeGuard } from '@network-decode/node-guard/local-express';
 if (typeof createLocalNodeGuardClient({ socketPath: '/tmp/nodeguard-smoke.sock', applicationId: 'billing-api', token: 'a'.repeat(32) }).evaluate !== 'function') process.exit(6);
+if (typeof createLocalExpressNodeGuard({ client: { evaluate: async () => ({ decision: 'ALLOW' }) },
+  getVerifiedSourceIp: () => '8.8.8.8', getVerifiedRouteId: () => 'auth.login' }) !== 'function') process.exit(7);
 const source = createTrustedSourceResolver({ trustedProxyIps: ['127.0.0.1'] });
 if (source({ socket: { remoteAddress: '127.0.0.1' }, headers: { 'x-forwarded-for': '1.1.1.1, 8.8.8.8' } }) !== '8.8.8.8') process.exit(1);
 const free = createNodeGuard({ mode: 'enforce', thresholds: { replay_burst: 2 }, canActOnSource: () => true });
@@ -53,7 +56,7 @@ for (const event_id of ['event-003', 'event-004']) v2.record({ schema_version: 2
 if (!v2.isBlocked({ sourceIp: '8.8.8.8', routeId: 'auth.login', identity })) process.exit(5);
 `);
   execFileSync(process.execPath, [smokePath], { stdio: "pipe" });
-  process.stdout.write("Clean tarball install passed: CLI, OBSERVE default, local Guard, v1 and v2 runtimes, trusted source, local client, Next route export.\n");
+  process.stdout.write("Clean tarball install passed: CLI, OBSERVE default, local Guard, v1 and v2 runtimes, trusted source, local client, local Express adapter, Next route export.\n");
 } finally {
   await rm(temporaryRoot, { recursive: true, force: true });
 }
