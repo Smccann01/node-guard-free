@@ -1,14 +1,15 @@
 # Node Guard Free changes
 
 ## 0.2.0-alpha.11-dev.0 (unpublished integration candidate)
+
 - Add deterministic local replay of ordered v1 and synthetic v2 policy observations. Timelines show decision transitions and bounded state without network or host enforcement. ENFORCE CLI replay requires an explicit protected-source file. This is not in the public npm alpha.
 - Add read-only policy diff and deterministic shared-fixture comparison for local review. This is not in the public npm alpha and does not activate a policy.
 - Add a customer-controlled raw-body HMAC Webhook Shield verifier with bounded size, signed timestamp and event ID, one-process replay protection, and a fail-closed clock check. It is not compatible with third-party webhook signatures without a dedicated adapter.
 
 ## 0.2.0-alpha.10 (public alpha)
 
-- Canonicalize eligible IPv6 source addresses before matching thresholds, protected-source checks, active restrictions, release requests, simulations, and local API audit entries. Equivalent spellings now refer to one source throughout the standalone and v1 policy guards.
-- This published maintenance package excludes Webhook Shield, Security Replay, and Policy Studio.
+- Include the canonical IPv6 source correction merged after the alpha.9 tag. Equivalent public IPv6 spellings now map to the same source for the standalone and v1 policy guards and local management API.
+- Keep Security Replay, Policy Studio, and Webhook Shield out of this published maintenance package. The exact staged tarball was reviewed and approved under a scoped one-person exception for this free experimental alpha; that exception does not authorize later releases.
 
 ## 0.2.0-alpha.9 (staging candidate)
 

@@ -1,8 +1,8 @@
 # Node Guard alpha release
 
-The public package is published only from a version tag after tests and package review. The current npm `alpha` release remains `0.2.0-alpha.6` until a later tag succeeds.
+The public package is published only from a version tag after tests and package review. The current npm `alpha` release is `0.2.0-alpha.10`; `latest` remains `0.2.0-alpha.6`. Install the exact alpha version for evaluation.
 
-The alpha.9 tag failed npm staging authorization and predates the canonical IPv6 source correction. Do not approve or publish alpha.9. Alpha.10 is the next reviewed candidate; do not create its immutable tag until the package-side trusted publisher has been inspected and corrected if needed.
+The alpha.9 tag failed npm staging authorization and predates the canonical IPv6 source correction. Do not approve or publish alpha.9. Alpha.10 was staged through the stage-only trusted publisher and approved with npm 2FA after the owner accepted a scoped one-person review exception. The exact public tarball and provenance were verified. The normal release procedure below still calls for a separate operator.
 
 ## First-time trusted publisher setup
 
@@ -13,7 +13,7 @@ In npm package settings for `@network-decode/node-guard`, add a GitHub Actions t
 - Workflow filename: `publish.yml`
 - Allowed action: `npm stage publish` (direct `npm publish` can remain disabled)
 
-The workflow is `.github/workflows/publish.yml`. Configure this shortly before the next release and verify the package-side relationship. No npm write token belongs in GitHub secrets. The workflow runs on a GitHub-hosted runner with `id-token: write`, Node.js 24, and npm CLI 11.21.1. It stages an `alpha` release; a maintainer then inspects and approves the staged package with 2FA. The runner does not use `setup-node`'s registry authentication configuration, so npm can request its OIDC trust token. See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) and [staged publishing](https://docs.npmjs.com/staged-publishing/).
+The workflow is `.github/workflows/publish.yml`. The package-side stage-only relationship was configured for alpha.10; verify it remains exact before each later release. No npm write token belongs in GitHub secrets. The workflow runs on a GitHub-hosted runner with `id-token: write`, Node.js 24, and npm CLI 11.21.1. It stages an `alpha` release; a maintainer then inspects and approves the staged package with 2FA. The runner does not use `setup-node`'s registry authentication configuration, so npm can request its OIDC trust token. See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) and [staged publishing](https://docs.npmjs.com/staged-publishing/).
 
 ## Release procedure
 
