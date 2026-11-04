@@ -2,8 +2,9 @@
 import { readFile, stat, writeFile } from "node:fs/promises";
 import { simulatePolicyV1, validatePolicyV1 } from "../policy.mjs";
 import { simulateIdentityPolicyV2, validateIdentityPolicyV2 } from "../identity-policy.mjs";
+import { replayPolicyV1 } from "../replay-policy.mjs";
 
-const usage = "Usage: nodeguard init [--output <policy.json>] | nodeguard doctor [policy.json] | nodeguard policy validate <policy.json> | nodeguard policy test <policy.json> <observations.json> --at <UTC timestamp> | nodeguard inspect <policy.json> | nodeguard export <policy.json> --output <file>";
+const usage = "Usage: nodeguard init [--output <policy.json>] | nodeguard doctor [policy.json] | nodeguard policy validate <policy.json> | nodeguard policy test <policy.json> <observations.json> --at <UTC timestamp> | nodeguard replay <policy.json> <observations.json> --at <UTC timestamp> [--protected <source-ips.json>] | nodeguard inspect <policy.json> | nodeguard export <policy.json> --output <file>";
 const examplePolicy = new URL("../examples/auth-policy.json", import.meta.url);
 
 async function readJson(path) {
@@ -60,6 +61,18 @@ async function main(args) {
       ...(policy.schema_version === 2 ? { identity_scope: policy.identity_scope, excluded_route_ids: policy.excluded_route_ids } : {}) };
     await writeFile(args[3], `${JSON.stringify(exported, null, 2)}\n`, { flag: "wx", mode: 0o600 });
     process.stdout.write(`Exported policy without runtime events: ${args[3]}\n`);
+    return;
+  }
+  if (args[0] === "replay" && (args.length === 5 || args.length === 7) && args[3] === "--at" &&
+      (args.length === 5 || args[5] === "--protected")) {
+    const policy = validatePolicy(await readJson(args[1]));
+    if (policy.schema_version !== 1) throw new Error("replay currently supports policy v1 only");
+    if (policy.mode === "ENFORCE" && args.length !== 7) {
+      throw new Error("ENFORCE replay requires --protected <source-ips.json>; use [] if none apply");
+    }
+    const protectedSources = args.length === 7 ? await readJson(args[6]) : [];
+    const result = replayPolicyV1({ policy, observations: await readJson(args[2]), at: args[4], protectedSources });
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     return;
   }
   if (args[0] !== "policy") throw new Error(usage);

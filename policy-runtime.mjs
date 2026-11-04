@@ -1,4 +1,4 @@
-import { isEligibleSource } from "./guard-core.mjs";
+import { normalizeEligibleSource } from "./guard-core.mjs";
 import { validateObservationV1, validatePolicyV1 } from "./policy.mjs";
 
 function boundedInteger(value, name, maximum) {
@@ -96,9 +96,10 @@ export function createPolicyGuardV1({ policy: policyInput, canActOnSource, onDec
   }
 
   function restriction(sourceIp) {
-    if (policy.mode !== "ENFORCE" || !isEligibleSource(sourceIp) || !allows(sourceIp)) return null;
+    const normalizedSource = normalizeEligibleSource(sourceIp);
+    if (policy.mode !== "ENFORCE" || !normalizedSource || !allows(normalizedSource)) return null;
     const at = now();
-    const entry = state.get(sourceIp);
+    const entry = state.get(normalizedSource);
     if (!entry || entry.restrictionUntil <= at) return null;
     return {
       action: policy.action, policyId: policy.policy_id,
@@ -108,9 +109,11 @@ export function createPolicyGuardV1({ policy: policyInput, canActOnSource, onDec
   }
 
   function release(sourceIp) {
-    const entry = state.get(sourceIp);
+    const normalizedSource = normalizeEligibleSource(sourceIp);
+    if (!normalizedSource) return 0;
+    const entry = state.get(normalizedSource);
     if (!entry) return 0;
-    state.delete(sourceIp);
+    state.delete(normalizedSource);
     return 1;
   }
 

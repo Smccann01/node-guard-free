@@ -1,5 +1,10 @@
 # Node Guard Free changes
 
+## Unreleased source candidate
+
+- Add deterministic local replay of ordered v1 policy observations. The timeline shows duplicate and protected-source rejection, temporary restriction state, and natural expiry without network or host enforcement. ENFORCE CLI replay requires an explicit protected-source file. This is not in the public npm alpha.
+- Canonicalize eligible IPv6 source addresses in the basic guard and v1 policy runtime so equivalent spellings share one restriction and one protected-source decision. This is a source candidate until published and verified.
+
 ## 0.2.0-alpha.8 (candidate)
 
 - Add an experimental v2 application policy with server-verified subject, tenant, or API-key identity. A source-IP scope remains available. The v1 API and published `0.2.0-alpha.6` behavior are unchanged.

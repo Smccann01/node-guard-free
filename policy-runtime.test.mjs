@@ -57,3 +57,18 @@ test("OBSERVE never restricts and capacity stays bounded", () => {
   assert.throws(() => createPolicyGuardV1({ policy, canActOnSource: () => true, maxObservations: 1 }), /meet the policy threshold/);
   assert.throws(() => createPolicyGuardV1({ policy }), /canActOnSource/);
 });
+
+test("v1 policy counts equivalent IPv6 forms as one source and honors canonical protection", () => {
+  const expanded = '2606:4700:4700:0:0:0:0:1111';
+  const compact = '2606:4700:4700::1111';
+  const guard = createPolicyGuardV1({ policy, now: () => start, canActOnSource: () => true });
+  assert.equal(guard.record(observation('event-101', { source_ip: expanded })).action, 'recorded');
+  assert.equal(guard.record(observation('event-102', { source_ip: compact })).action, 'THROTTLE');
+  assert.equal(guard.isBlocked(expanded), true);
+  assert.equal(guard.snapshot()[0].sourceIp, compact);
+  assert.equal(guard.release(expanded), 1);
+  assert.equal(guard.isBlocked(compact), false);
+  const protectedGuard = createPolicyGuardV1({ policy, now: () => start,
+    canActOnSource: (ip) => ip !== compact });
+  assert.equal(protectedGuard.record(observation('event-103', { source_ip: expanded })).reason, 'source_excluded');
+});

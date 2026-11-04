@@ -29,6 +29,7 @@ try {
   await writeFile(smokePath, `
 import { createNodeGuard } from '@network-decode/node-guard';
 import { createPolicyGuardV1 } from '@network-decode/node-guard/policy-runtime';
+import { replayPolicyV1 } from '@network-decode/node-guard/replay-policy';
 import { createTrustedSourceResolver } from '@network-decode/node-guard/trusted-source';
 import { createNextRouteGuard } from '@network-decode/node-guard/next-route';
 import { createVerifiedIdentity, createIdentityGuardV2 } from '@network-decode/node-guard/identity-policy';
@@ -43,6 +44,11 @@ const at = Date.parse('2026-11-03T18:00:00Z');
 const guard = createPolicyGuardV1({ policy, now: () => at, canActOnSource: () => true });
 for (const event_id of ['event-001', 'event-002']) guard.record({ schema_version: 1, application_id: 'billing-api', event_id, observed_at: '2026-11-03T18:00:00Z', route_id: 'auth.login', reason_code: 'authentication_failure', source_ip: '8.8.8.8', protocol: 'HTTPS' });
 if (!guard.isBlocked('8.8.8.8')) process.exit(3);
+const replay = replayPolicyV1({ policy, observations: ['event-001', 'event-002'].map((event_id) => ({
+  schema_version: 1, application_id: 'billing-api', event_id, observed_at: '2026-11-03T18:00:00Z',
+  route_id: 'auth.login', reason_code: 'authentication_failure', source_ip: '8.8.8.8', protocol: 'HTTPS',
+})), at: '2026-11-03T18:00:01Z', protectedSources: [] });
+if (replay.enforcement_scope !== 'simulation_only' || replay.active_restrictions.length !== 1) process.exit(8);
 const routeCheck = createNextRouteGuard({ guard, getVerifiedSourceIp: () => '8.8.8.8' });
 if ((await routeCheck(new Request('https://example.test/api/login')))?.status !== 429) process.exit(4);
 const identity = createVerifiedIdentity({ subjectId: 'member-01' });

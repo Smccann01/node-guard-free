@@ -2,6 +2,7 @@ import { createNodeGuard, type GuardInstance } from '@network-decode/node-guard'
 import { createExpressNodeGuard } from '@network-decode/node-guard/express';
 import { createNextRouteGuard } from '@network-decode/node-guard/next-route';
 import { createPolicyGuardV1 } from '@network-decode/node-guard/policy-runtime';
+import { replayPolicyV1 } from '@network-decode/node-guard/replay-policy';
 import type { PolicyV1, ObservationV1 } from '@network-decode/node-guard/policy';
 import { createTrustedSourceResolver } from '@network-decode/node-guard/trusted-source';
 import { createVerifiedIdentity, createIdentityGuardV2, type IdentityPolicyV2 } from '@network-decode/node-guard/identity-policy';
@@ -22,6 +23,8 @@ const observation: ObservationV1 = {
 };
 const runtime = createPolicyGuardV1({ policy });
 runtime.record(observation);
+const replay = replayPolicyV1({ policy, observations: [observation], at: observation.observed_at });
+void replay.enforcement_scope;
 const resolveSource = createTrustedSourceResolver();
 const express = createExpressNodeGuard({ guard, getVerifiedSourceIp: () => '8.8.8.8' });
 const next = createNextRouteGuard({ guard, getVerifiedSourceIp: () => '8.8.8.8' });
