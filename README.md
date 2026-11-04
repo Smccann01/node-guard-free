@@ -51,7 +51,7 @@ See [developer setup](DEVELOPER_SETUP.md), [Next route guide](NEXT_ROUTE_GUIDE.m
 
 The application owns authentication and supplies verified client identity. Only trust forwarding headers from explicitly named proxy IPs. The enforcement mode requires a `canActOnSource` callback so operators can protect management addresses. Never derive `source_ip` or a subject from an untrusted request body or arbitrary header. The application must call `record` only after it has verified an event, such as an authentication failure.
 
-This package stores no request bodies, tokens, or passwords in the standalone engine. The default state is local to one process and bounded by `maxSources` and `maxObservations`. An [optional local API candidate](LOCAL_API.md) has separate app and management credentials; its audit ring is in memory. A durable shared state store and console are later phases. The private HoneyMesh bridge remains a separate paid host integration and is not present in this package.
+This package stores no request bodies, tokens, or passwords in the standalone engine. The default state is local to one process and bounded by `maxSources` and `maxObservations`. An [optional local API candidate](LOCAL_API.md) has separate app and management credentials; its audit ring is in memory. The local decision client on its development branch lets workers under one Unix user consult that one coordinator process. It is not yet part of the published npm alpha. A durable shared state store and console are later phases. The private HoneyMesh bridge remains a separate paid host integration and is not present in this package.
 
 ## Commands
 

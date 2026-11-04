@@ -62,7 +62,8 @@ export function createLocalNodeGuardApi({ socketPath, applications, managementTo
   for (const app of applications) {
     if (!app || typeof app.applicationId !== 'string' || !/^[a-z][a-z0-9._-]{1,63}$/.test(app.applicationId) ||
         app.guard?.policy?.schema_version !== 1 || app.guard.policy.application_id !== app.applicationId || typeof app.guard.record !== 'function' ||
-        typeof app.guard.release !== 'function' || typeof app.guard.snapshot !== 'function' || apps.has(app.applicationId)) {
+        typeof app.guard.restriction !== 'function' || typeof app.guard.release !== 'function' ||
+        typeof app.guard.snapshot !== 'function' || apps.has(app.applicationId)) {
       throw new TypeError('each application needs a unique ID and matching policy guard');
     }
     const tokenHash = credentialHash(app.token, `application ${app.applicationId} token`);
@@ -95,6 +96,19 @@ export function createLocalNodeGuardApi({ socketPath, applications, managementTo
         if (!result.accepted) return reply(response, 422, { error: result.reason });
         if (result.action !== 'recorded') auditAction(result.action, app[0], body.source_ip, 1);
         return reply(response, 200, result);
+      }
+      if (pathname === '/v1/decisions/evaluate' && request.method === 'POST') {
+        const app = [...apps.entries()].find(([, value]) => matches(authorization, value.tokenHash));
+        if (!app) return reply(response, 401, { error: 'unauthorized' });
+        const body = await jsonBody(request);
+        if (body.application_id !== app[0]) return reply(response, 403, { error: 'application_scope' });
+        if (Object.keys(body).some((key) => !['application_id', 'source_ip'].includes(key)) ||
+            !isEligibleSource(body.source_ip)) return reply(response, 400, { error: 'invalid_source' });
+        const restriction = app[1].guard.restriction(body.source_ip);
+        return reply(response, 200, { application_id: app[0], source_ip: body.source_ip,
+          decision: restriction?.action ?? 'ALLOW',
+          restriction: restriction ? { policy_id: restriction.policyId,
+            expires_at: restriction.expiresAt, retry_after_seconds: restriction.retryAfterSeconds } : null });
       }
       if (!matches(authorization, managementHash)) return reply(response, 401, { error: 'unauthorized' });
       if (pathname === '/v1/health' && request.method === 'GET') {

@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
-import { request } from 'node:http';
+import { createServer, request } from 'node:http';
 import { spawn } from 'node:child_process';
 import { mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { createLocalNodeGuardApi } from './local-api.mjs';
+import { createLocalNodeGuardClient } from './local-client.mjs';
 import { createPolicyGuardV1 } from './policy-runtime.mjs';
 import { createIdentityGuardV2 } from './identity-policy.mjs';
 
@@ -63,6 +64,24 @@ function callInChild(socketPath, token, body) {
   });
 }
 
+function evaluateInChild(socketPath, token, sourceIp) {
+  const script = `
+    import { createLocalNodeGuardClient } from ${JSON.stringify(new URL('./local-client.mjs', import.meta.url).href)};
+    const [socketPath, token, sourceIp] = process.argv.slice(1);
+    const client = createLocalNodeGuardClient({ socketPath, applicationId: 'app-a', token });
+    process.stdout.write(JSON.stringify(await client.evaluate(sourceIp)));
+  `;
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, ['--input-type=module', '-e', script, socketPath, token, sourceIp],
+      { stdio: ['ignore', 'pipe', 'pipe'] });
+    let output = ''; let errors = '';
+    child.stdout.on('data', (chunk) => output += chunk);
+    child.stderr.on('data', (chunk) => errors += chunk);
+    child.on('error', reject);
+    child.on('close', (code) => code === 0 ? resolve(JSON.parse(output)) : reject(new Error(errors || `child exited ${code}`)));
+  });
+}
+
 test('local API scopes two app tokens, separates management, audits release, and binds private socket', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'nodeguard-api-'));
   const socketPath = path.join(dir, 'guard.sock');
@@ -83,6 +102,18 @@ test('local API scopes two app tokens, separates management, audits release, and
     assert.equal((await call(socketPath, 'POST', '/v1/observations', appAToken, observation('app-a', 'event-002'))).body.action, 'THROTTLE');
     assert.equal(a.isBlocked('8.8.8.8'), true);
     assert.equal(b.isBlocked('8.8.8.8'), false);
+    assert.equal((await call(socketPath, 'POST', '/v1/decisions/evaluate', appAToken,
+      { application_id: 'app-b', source_ip: '8.8.8.8' })).status, 403);
+    assert.equal((await call(socketPath, 'POST', '/v1/decisions/evaluate', adminToken,
+      { application_id: 'app-a', source_ip: '8.8.8.8' })).status, 401);
+    assert.equal((await call(socketPath, 'POST', '/v1/decisions/evaluate', appAToken,
+      { application_id: 'app-a', source_ip: '8.8.8.8', subject_id: 'forged' })).status, 400);
+    assert.equal((await call(socketPath, 'POST', '/v1/decisions/evaluate', appAToken,
+      { application_id: 'app-a', source_ip: '127.0.0.1' })).status, 400);
+    assert.equal((await call(socketPath, 'POST', '/v1/decisions/evaluate', appAToken,
+      { application_id: 'app-a', source_ip: '8.8.8.8' })).body.decision, 'THROTTLE');
+    assert.equal((await call(socketPath, 'POST', '/v1/decisions/evaluate', appBToken,
+      { application_id: 'app-b', source_ip: '8.8.8.8' })).body.decision, 'ALLOW');
     const restrictions = await call(socketPath, 'GET', '/v1/restrictions', adminToken);
     assert.equal(restrictions.status, 200);
     assert.equal(restrictions.body.restrictions.length, 1);
@@ -100,6 +131,54 @@ test('local API scopes two app tokens, separates management, audits release, and
     assert.equal(simulated.body.results[0].decision, 'THROTTLE');
   } finally {
     await api.stop();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('two worker processes share one app decision state through the local coordinator', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'nodeguard-api-workers-'));
+  const socketPath = path.join(dir, 'guard.sock');
+  const api = createLocalNodeGuardApi({ socketPath, managementToken: adminToken,
+    applications: [{ applicationId: 'app-a', token: appAToken, guard: guardFor('app-a') }], now: () => at });
+  const client = createLocalNodeGuardClient({ socketPath, applicationId: 'app-a', token: appAToken });
+  try {
+    await api.start();
+    const first = await callInChild(socketPath, appAToken, observation('app-a', 'event-101'));
+    assert.equal(first.body.action, 'recorded');
+    assert.equal((await client.evaluate('8.8.8.8')).decision, 'ALLOW');
+    const second = await callInChild(socketPath, appAToken, observation('app-a', 'event-102'));
+    assert.equal(second.body.action, 'THROTTLE');
+    const evaluation = await client.evaluate('8.8.8.8');
+    assert.equal(evaluation.decision, 'THROTTLE');
+    assert.equal((await evaluateInChild(socketPath, appAToken, '8.8.8.8')).decision, 'THROTTLE');
+    await assert.rejects(evaluateInChild(socketPath, appBToken, '8.8.8.8'));
+    assert.equal(evaluation.restriction.policy_id, 'app-a-login');
+    assert.equal(evaluation.restriction.retry_after_seconds, 60);
+    assert.equal((await client.evaluate('9.9.9.9')).decision, 'ALLOW');
+    assert.equal((await call(socketPath, 'POST', '/v1/restrictions/release', adminToken,
+      { application_id: 'app-a', source_ip: '8.8.8.8' })).body.affected, 1);
+    assert.equal((await client.evaluate('8.8.8.8')).decision, 'ALLOW');
+  } finally {
+    await api.stop();
+    await rm(dir, { recursive: true, force: true });
+  }
+  await assert.rejects(client.evaluate('8.8.8.8'));
+  assert.throws(() => client.evaluate('127.0.0.1'), /verified eligible/);
+});
+
+test('local client rejects a coordinator response for a different application', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'nodeguard-api-response-'));
+  const socketPath = path.join(dir, 'wrong.sock');
+  const fake = createServer((_request, response) => {
+    response.writeHead(200, { 'content-type': 'application/json' });
+    response.end(JSON.stringify({ application_id: 'app-b', source_ip: '8.8.8.8', decision: 'ALLOW', restriction: null }));
+  });
+  try {
+    await new Promise((resolve) => fake.listen(socketPath, resolve));
+    const client = createLocalNodeGuardClient({ socketPath, applicationId: 'app-a', token: appAToken });
+    await assert.rejects(client.evaluate('8.8.8.8'), /invalid coordinator decision/);
+  } finally {
+    await new Promise((resolve) => fake.close(resolve));
     await rm(dir, { recursive: true, force: true });
   }
 });

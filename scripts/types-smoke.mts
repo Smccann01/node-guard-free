@@ -8,6 +8,7 @@ import { createVerifiedIdentity, createIdentityGuardV2, type IdentityPolicyV2 } 
 import { createExpressIdentityGuardV2 } from '@network-decode/node-guard/identity-express';
 import { createNextIdentityGuardV2 } from '@network-decode/node-guard/identity-next-route';
 import { createLocalNodeGuardApi } from '@network-decode/node-guard/local-api';
+import { createLocalNodeGuardClient } from '@network-decode/node-guard/local-client';
 
 const guard: GuardInstance = createNodeGuard({ mode: 'observe' });
 const policy: PolicyV1 = {
@@ -39,3 +40,7 @@ void [identityExpress, identityNext];
 const api = createLocalNodeGuardApi({ socketPath: '/tmp/nodeguard-types-smoke.sock', managementToken: 'm'.repeat(32),
   applications: [{ applicationId: 'billing-api', token: 'a'.repeat(32), guard: runtime }] });
 void api;
+const localClient = createLocalNodeGuardClient({ socketPath: '/tmp/nodeguard-types-smoke.sock',
+  applicationId: 'billing-api', token: 'a'.repeat(32) });
+void localClient.evaluate('8.8.8.8').then((result) => result.decision);
+void localClient.record(observation);
