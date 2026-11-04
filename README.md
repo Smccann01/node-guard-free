@@ -1,6 +1,6 @@
 # Node Guard Free
 
-> Development branch note: this source includes [local replay](REPLAY.md), read-only [Policy Studio](POLICY_STUDIO.md), and customer-controlled [Webhook Shield](WEBHOOK_SHIELD.md) candidates. The public npm `alpha` release is `0.2.0-alpha.10`; these tools are not in that package. See [identity scopes v2](IDENTITY_SCOPES_V2.md) for the trust contract and limits.
+> Development branch note: this `0.2.0-alpha.11-dev.0` integration candidate combines [local replay](REPLAY.md), read-only [Policy Studio](POLICY_STUDIO.md), and customer-controlled [Webhook Shield](WEBHOOK_SHIELD.md). The public npm `alpha` release is `0.2.0-alpha.10`; these tools are not in that package. See [identity scopes v2](IDENTITY_SCOPES_V2.md) for the trust contract and limits.
 
 Node Guard Free is a local application protection SDK for Node.js. It requires no account, license key, HoneyMesh agent, root access, or subscription. It does not attach XDP, enforce host firewall rules, or participate in Exchange.
 
