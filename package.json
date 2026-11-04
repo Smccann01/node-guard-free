@@ -19,6 +19,7 @@
     "NEXT_ROUTE_GUIDE.md",
     "IDENTITY_SCOPES_V2.md",
     "LOCAL_API.md",
+    "POLICY_STUDIO.md",
     "RELEASE.md",
     "REPRODUCE.md",
     "index.mjs",
@@ -42,6 +43,8 @@
     "identity-next-route.d.ts",
     "local-api.mjs",
     "local-api.d.ts",
+    "policy-diff.mjs",
+    "policy-diff.d.ts",
     "bin/nodeguard.mjs",
     "examples/auth-policy.json",
     "examples/auth-observations.json",
@@ -91,6 +94,10 @@
     "./local-api": {
       "types": "./local-api.d.ts",
       "default": "./local-api.mjs"
+    },
+    "./policy-diff": {
+      "types": "./policy-diff.d.ts",
+      "default": "./policy-diff.mjs"
     },
     "./package.json": "./package.json"
   },
