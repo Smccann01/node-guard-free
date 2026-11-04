@@ -1,9 +1,13 @@
 # Node Guard Free changes
 
-## 0.2.0-alpha.10 (staging candidate)
+## Unreleased source candidate
 
-- Include the canonical IPv6 source correction merged after the alpha.9 tag. Equivalent public IPv6 spellings now map to the same source for the standalone and v1 policy guards and local management API.
-- Keep Security Replay, Policy Studio, and Webhook Shield out of this maintenance package. The public npm `alpha` version remains alpha.6 until a staged candidate passes publisher authorization, independent review, and maintainer approval.
+- Add a customer-controlled raw-body HMAC Webhook Shield verifier with bounded size, signed timestamp and event ID, one-process replay protection, and a fail-closed clock check. It is not compatible with third-party webhook signatures without a dedicated adapter.
+
+## 0.2.0-alpha.10 (public alpha)
+
+- Canonicalize eligible IPv6 source addresses before matching thresholds, protected-source checks, active restrictions, release requests, simulations, and local API audit entries. Equivalent spellings now refer to one source throughout the standalone and v1 policy guards.
+- This published maintenance package excludes Webhook Shield, Security Replay, and Policy Studio.
 
 ## 0.2.0-alpha.9 (staging candidate)
 
