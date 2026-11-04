@@ -8,6 +8,9 @@ import { createVerifiedIdentity, createIdentityGuardV2, type IdentityPolicyV2 } 
 import { createExpressIdentityGuardV2 } from '@network-decode/node-guard/identity-express';
 import { createNextIdentityGuardV2 } from '@network-decode/node-guard/identity-next-route';
 import { createLocalNodeGuardApi } from '@network-decode/node-guard/local-api';
+import { createIdentityPolicySetV2 } from '@network-decode/node-guard/identity-policy-set';
+import { createExpressIdentityPolicySetV2 } from '@network-decode/node-guard/identity-policy-set-express';
+import { createNextIdentityPolicySetV2 } from '@network-decode/node-guard/identity-policy-set-next';
 
 const guard: GuardInstance = createNodeGuard({ mode: 'observe' });
 const policy: PolicyV1 = {
@@ -39,3 +42,10 @@ void [identityExpress, identityNext];
 const api = createLocalNodeGuardApi({ socketPath: '/tmp/nodeguard-types-smoke.sock', managementToken: 'm'.repeat(32),
   applications: [{ applicationId: 'billing-api', token: 'a'.repeat(32), guard: runtime }] });
 void api;
+const set = createIdentityPolicySetV2({ policies: [identityPolicy], canActOnSource: () => true });
+set.record({ ...observation, schema_version: 2 }, identity);
+const setExpress = createExpressIdentityPolicySetV2({ policySet: set,
+  getVerifiedSourceIp: () => '8.8.8.8', getRouteId: () => 'auth.login', getVerifiedIdentity: () => identity });
+const setNext = createNextIdentityPolicySetV2({ policySet: set,
+  getVerifiedSourceIp: () => '8.8.8.8', getRouteId: () => 'auth.login', getVerifiedIdentity: () => identity });
+void [setExpress, setNext];

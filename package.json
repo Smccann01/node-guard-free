@@ -1,6 +1,6 @@
 {
   "name": "@network-decode/node-guard",
-  "version": "0.2.0-alpha.8",
+  "version": "0.2.0-alpha.9",
   "license": "Apache-2.0",
   "type": "module",
   "repository": {
@@ -18,6 +18,7 @@
     "DEVELOPER_SETUP.md",
     "NEXT_ROUTE_GUIDE.md",
     "IDENTITY_SCOPES_V2.md",
+    "IDENTITY_POLICY_SET.md",
     "LOCAL_API.md",
     "RELEASE.md",
     "REPRODUCE.md",
@@ -40,6 +41,12 @@
     "identity-express.d.ts",
     "identity-next-route.mjs",
     "identity-next-route.d.ts",
+    "identity-policy-set.mjs",
+    "identity-policy-set.d.ts",
+    "identity-policy-set-express.mjs",
+    "identity-policy-set-express.d.ts",
+    "identity-policy-set-next.mjs",
+    "identity-policy-set-next.d.ts",
     "local-api.mjs",
     "local-api.d.ts",
     "bin/nodeguard.mjs",
@@ -87,6 +94,18 @@
     "./identity-next-route": {
       "types": "./identity-next-route.d.ts",
       "default": "./identity-next-route.mjs"
+    },
+    "./identity-policy-set": {
+      "types": "./identity-policy-set.d.ts",
+      "default": "./identity-policy-set.mjs"
+    },
+    "./identity-policy-set-express": {
+      "types": "./identity-policy-set-express.d.ts",
+      "default": "./identity-policy-set-express.mjs"
+    },
+    "./identity-policy-set-next": {
+      "types": "./identity-policy-set-next.d.ts",
+      "default": "./identity-policy-set-next.mjs"
     },
     "./local-api": {
       "types": "./local-api.d.ts",
