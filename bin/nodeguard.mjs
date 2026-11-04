@@ -2,7 +2,7 @@
 import { readFile, stat, writeFile } from "node:fs/promises";
 import { simulatePolicyV1, validatePolicyV1 } from "../policy.mjs";
 import { simulateIdentityPolicyV2, validateIdentityPolicyV2 } from "../identity-policy.mjs";
-import { replayPolicyV1 } from "../replay-policy.mjs";
+import { replayIdentityPolicyV2, replayPolicyV1 } from "../replay-policy.mjs";
 
 const usage = "Usage: nodeguard init [--output <policy.json>] | nodeguard doctor [policy.json] | nodeguard policy validate <policy.json> | nodeguard policy test <policy.json> <observations.json> --at <UTC timestamp> | nodeguard replay <policy.json> <observations.json> --at <UTC timestamp> [--protected <source-ips.json>] [--redact] | nodeguard inspect <policy.json> | nodeguard export <policy.json> --output <file>";
 const examplePolicy = new URL("../examples/auth-policy.json", import.meta.url);
@@ -65,7 +65,6 @@ async function main(args) {
   }
   if (args[0] === "replay" && args.length >= 5 && args[3] === "--at") {
     const policy = validatePolicy(await readJson(args[1]));
-    if (policy.schema_version !== 1) throw new Error("replay currently supports policy v1 only");
     let position = 5;
     let protectedSources = [];
     let hasProtectedSources = false;
@@ -80,7 +79,10 @@ async function main(args) {
     if (policy.mode === "ENFORCE" && !hasProtectedSources) {
       throw new Error("ENFORCE replay requires --protected <source-ips.json>; use [] if none apply");
     }
-    const result = replayPolicyV1({ policy, observations: await readJson(args[2]), at: args[4], protectedSources, redactSources });
+    const input = await readJson(args[2]);
+    const result = policy.schema_version === 2
+      ? replayIdentityPolicyV2({ policy, entries: input, at: args[4], protectedSources, redactSources })
+      : replayPolicyV1({ policy, observations: input, at: args[4], protectedSources, redactSources });
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     return;
   }

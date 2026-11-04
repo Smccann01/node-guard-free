@@ -1,6 +1,6 @@
 # Node Guard Free
 
-> Development branch note: the `0.2.0-alpha.8` source adds experimental identity-scoped policy v2 modules. This branch also adds local v1 policy replay. The public npm `alpha` release remains `0.2.0-alpha.6` until a reviewed candidate passes publishing. See [identity scopes v2](IDENTITY_SCOPES_V2.md) and [local replay](REPLAY.md) for their limits.
+> Development branch note: the `0.2.0-alpha.8` source adds experimental identity-scoped policy v2 modules. This branch also adds local v1 and v2 policy replay. The public npm `alpha` release remains `0.2.0-alpha.6` until a reviewed candidate passes publishing. See [identity scopes v2](IDENTITY_SCOPES_V2.md) and [local replay](REPLAY.md) for their limits.
 
 Node Guard Free is a local application protection SDK for Node.js. It requires no account, license key, HoneyMesh agent, root access, or subscription. It does not attach XDP, enforce host firewall rules, or participate in Exchange.
 
@@ -47,7 +47,7 @@ const guard = createPolicyGuardV1({ policy, canActOnSource: (ip) => !protectedIp
 
 See [developer setup](DEVELOPER_SETUP.md), [Next route guide](NEXT_ROUTE_GUIDE.md), and [independent alpha check](REPRODUCE.md) for integration and reproduction steps. `nodeguard policy test` simulates decisions at a specified timestamp.
 
-The source candidate's `nodeguard replay` command shows each v1 observation, decision, and simulated restriction in time order. It does not inspect a running application. See the [replay guide](REPLAY.md).
+The source candidate's `nodeguard replay` command shows v1 observations or v2 synthetic identity fixtures, decisions, and simulated restrictions in time order. It does not inspect a running application. See the [replay guide](REPLAY.md).
 
 ## Security model
 

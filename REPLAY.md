@@ -1,6 +1,6 @@
 # Local policy replay candidate
 
-`nodeguard replay` is an experimental, local-only v1 policy analysis tool. It evaluates an ordered observation file with the same in-memory v1 policy engine used by Node Guard. It returns a timeline and active restrictions at the requested UTC time. It never connects to HoneyMesh, Exchange, a socket, or the network.
+`nodeguard replay` is an experimental, local-only policy analysis tool for v1 observations and v2 synthetic identity fixtures. It evaluates ordered inputs with the same in-memory policy engines used by Node Guard. It returns a timeline and active restrictions at the requested UTC time. It never connects to HoneyMesh, Exchange, a socket, or the network.
 
 Each report includes a SHA-256 fingerprint over the validated policy fields in a fixed order. Record this alongside the source revision and observation-file hash when comparing runs. The fingerprint identifies policy bytes after validation; it is not a signature or proof that the policy was active in a running application.
 
@@ -10,9 +10,11 @@ For the bundled OBSERVE example:
 node bin/nodeguard.mjs replay examples/auth-policy.json examples/auth-observations.json --at 2026-11-03T18:00:00Z
 ```
 
+For v2 identity policies, use an array of `{ "observation": { ... }, "fixture_identity": "fixture:member_01" }` records. The `fixture_identity` value is required for `subject_id`, `tenant_id`, and `api_key_id` policies, and prohibited for `source_ip` policies. Use synthetic values only. The replay creates in-memory verified identities to exercise the guard but cannot prove that a real application's authentication layer supplied those identities. The report never emits the runtime's HMAC identity key.
+
 For an ENFORCE policy, supply the public source addresses protected by the deployment in a JSON array using `--protected protected-sources.json`. The CLI requires this file even when the reviewed list is `[]`. It uses the list only for simulation. It does not inspect a live application's ingress, policies, or protected-source configuration.
 
-The input must be an array of at most 10,000 valid v1 observations in nondecreasing `observed_at` order. Each input file is capped at 1 MiB by the CLI. Duplicate event IDs, policy mismatch, and protected sources appear as rejected timeline entries. Malformed input, out-of-order timestamps, and future events fail the command. Replaying at a later time shows whether an in-memory restriction would have naturally expired.
+The input must be an array of at most 10,000 valid observations or v2 fixtures in nondecreasing `observed_at` order. Each input file is capped at 1 MiB by the CLI. Duplicate event IDs, policy mismatch, and protected sources appear as rejected timeline entries. Malformed input, out-of-order timestamps, and future events fail the command. Replaying at a later time shows whether an in-memory restriction would have naturally expired.
 
 The default output contains source IPs. Add `--redact` to replace each source IP with a random-key HMAC pseudonym in that report. The key is never emitted, so aliases cannot be matched across separate runs. Keep unredacted output local. Node Guard does not collect request bodies, tokens, or passwords for this replay; it rejects those fields if they appear in an observation. The tool cannot reconstruct events that were never recorded, state lost on restart, other processes' counters, or decisions from a different policy version. Its timeline is a simulation, not evidence that a real HTTP response was sent or a host rule was applied.
 

@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { replayPolicyV1 } from './replay-policy.mjs';
+import { replayIdentityPolicyV2, replayPolicyV1 } from './replay-policy.mjs';
 
 const policy = {
   schema_version: 1, policy_id: 'login-v1', application_id: 'billing-api',
@@ -121,4 +121,61 @@ test('CLI requires an explicit protected-source file for ENFORCE replay', () => 
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('v2 replay uses synthetic identities and shows restriction expiry', () => {
+  const v2 = { ...policy, schema_version: 2, identity_scope: 'subject_id', excluded_route_ids: [] };
+  const entries = [first, second].map((observation) => ({
+    observation: { ...observation, schema_version: 2 }, fixture_identity: 'fixture:member_01',
+  }));
+  const active = replayIdentityPolicyV2({ policy: v2, entries, at: '2026-11-04T10:00:20Z', redactSources: true });
+  assert.equal(active.schema_version, 2);
+  assert.deepEqual(active.timeline.map((entry) => entry.record_action), ['recorded', 'THROTTLE']);
+  assert.deepEqual(active.active_restrictions, [{ identity_scope: 'subject_id',
+    identity_ref: 'fixture:member_01', action: 'THROTTLE', expires_at: '2026-11-04T10:00:31.000Z' }]);
+  assert.equal(JSON.stringify(active).includes('8.8.8.8'), false);
+  assert.equal(JSON.stringify(active).includes('subject_id:'), false);
+  const expired = replayIdentityPolicyV2({ policy: v2, entries, at: '2026-11-04T10:00:32Z' });
+  assert.deepEqual(expired.active_restrictions, []);
+});
+
+test('v2 replay rejects untrusted identity fixture fields and mismatched scope', () => {
+  const v2 = { ...policy, schema_version: 2, identity_scope: 'tenant_id', excluded_route_ids: [] };
+  const observation = { ...first, schema_version: 2 };
+  assert.throws(() => replayIdentityPolicyV2({ policy: v2,
+    entries: [{ observation, fixture_identity: 'real-user@example.com' }], at: '2026-11-04T10:00:20Z' }), /synthetic/);
+  assert.throws(() => replayIdentityPolicyV2({ policy: v2,
+    entries: [{ observation, fixture_identity: 'fixture:one', bearer_token: 'secret' }], at: '2026-11-04T10:00:20Z' }), /optional fixture_identity/);
+  assert.throws(() => replayIdentityPolicyV2({ policy: { ...v2, identity_scope: 'source_ip' },
+    entries: [{ observation, fixture_identity: 'fixture:one' }], at: '2026-11-04T10:00:20Z' }), /must not supply/);
+});
+
+test('v2 source-scope CLI replay redacts source and enforces protected-source input', () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'nodeguard-replay-v2-'));
+  const cli = fileURLToPath(new URL('./bin/nodeguard.mjs', import.meta.url));
+  try {
+    const policyPath = path.join(root, 'policy.json');
+    const eventsPath = path.join(root, 'events.json');
+    const protectedPath = path.join(root, 'protected.json');
+    writeFileSync(policyPath, JSON.stringify({ ...policy, schema_version: 2,
+      identity_scope: 'source_ip', excluded_route_ids: [] }));
+    writeFileSync(eventsPath, JSON.stringify([first, second].map((observation) => ({
+      observation: { ...observation, schema_version: 2 },
+    }))));
+    writeFileSync(protectedPath, '[]');
+    const report = JSON.parse(execFileSync(process.execPath, [cli, 'replay', policyPath, eventsPath,
+      '--at', '2026-11-04T10:00:20Z', '--protected', protectedPath, '--redact'], { encoding: 'utf8' }));
+    assert.equal(report.active_restrictions.length, 1);
+    assert.match(report.active_restrictions[0].identity_ref, /^source-[a-f0-9]{24}$/);
+    assert.equal(JSON.stringify(report).includes('8.8.8.8'), false);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('v2 replay cannot arm a restriction for a protected source', () => {
+  const v2 = { ...policy, schema_version: 2, identity_scope: 'source_ip', excluded_route_ids: [] };
+  const entries = [first, second].map((observation) => ({ observation: { ...observation, schema_version: 2 } }));
+  const report = replayIdentityPolicyV2({ policy: v2, entries,
+    at: '2026-11-04T10:00:20Z', protectedSources: ['8.8.8.8'] });
+  assert.deepEqual(report.timeline.map((entry) => entry.rejection_reason), ['source_excluded', 'source_excluded']);
+  assert.deepEqual(report.active_restrictions, []);
 });
