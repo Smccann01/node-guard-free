@@ -42,5 +42,5 @@ const api = createLocalNodeGuardApi({ socketPath: '/tmp/nodeguard-types-smoke.so
 void api;
 const localClient = createLocalNodeGuardClient({ socketPath: '/tmp/nodeguard-types-smoke.sock',
   applicationId: 'billing-api', token: 'a'.repeat(32) });
-void localClient.evaluate('8.8.8.8').then((result) => result.decision);
+void localClient.evaluate('8.8.8.8', 'auth.login').then((result) => result.decision);
 void localClient.record(observation);

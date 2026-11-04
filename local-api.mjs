@@ -102,10 +102,13 @@ export function createLocalNodeGuardApi({ socketPath, applications, managementTo
         if (!app) return reply(response, 401, { error: 'unauthorized' });
         const body = await jsonBody(request);
         if (body.application_id !== app[0]) return reply(response, 403, { error: 'application_scope' });
-        if (Object.keys(body).some((key) => !['application_id', 'source_ip'].includes(key)) ||
-            !isEligibleSource(body.source_ip)) return reply(response, 400, { error: 'invalid_source' });
-        const restriction = app[1].guard.restriction(body.source_ip);
+        if (Object.keys(body).some((key) => !['application_id', 'source_ip', 'route_id'].includes(key)) ||
+            !isEligibleSource(body.source_ip) || typeof body.route_id !== 'string' ||
+            !/^[a-z][a-z0-9._-]{1,63}$/.test(body.route_id)) return reply(response, 400, { error: 'invalid_context' });
+        const restriction = body.route_id === app[1].guard.policy.route_id
+          ? app[1].guard.restriction(body.source_ip) : null;
         return reply(response, 200, { application_id: app[0], source_ip: body.source_ip,
+          route_id: body.route_id,
           decision: restriction?.action ?? 'ALLOW',
           restriction: restriction ? { policy_id: restriction.policyId,
             expires_at: restriction.expiresAt, retry_after_seconds: restriction.retryAfterSeconds } : null });

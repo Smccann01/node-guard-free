@@ -7,7 +7,7 @@ This API is experimental. It accepts v1 source-scoped policy guards only; the v2
 | Method and path | Credential | Behavior |
 | --- | --- | --- |
 | `POST /v1/observations` | Application token | Submit one v1 observation for that token's application only |
-| `POST /v1/decisions/evaluate` | Application token | Evaluate one verified public source for that token's application; return `ALLOW`, `THROTTLE`, or `DENY` with bounded expiry information |
+| `POST /v1/decisions/evaluate` | Application token | Evaluate one verified public source and route for that token's application; return `ALLOW`, `THROTTLE`, or `DENY` with bounded expiry information |
 | `GET /v1/health` | Management token | Return local process status |
 | `GET /v1/restrictions` | Management token | List up to 1,000 active restrictions |
 | `POST /v1/restrictions/release` | Management token | Release one application's source restriction and audit it |
@@ -32,7 +32,8 @@ const client = createLocalNodeGuardClient({
 app.use(async (req, res, next) => {
   try {
     const sourceIp = getVerifiedSourceIp(req); // Your reviewed ingress resolver.
-    const result = await client.evaluate(sourceIp);
+    const routeId = getVerifiedRouteId(req); // Your reviewed route mapping.
+    const result = await client.evaluate(sourceIp, routeId);
     if (result.decision === 'ALLOW') return next();
     res.set('Retry-After', String(result.restriction.retry_after_seconds));
     return res.status(result.decision === 'DENY' ? 403 : 429).json({ error: 'node_guard_restricted' });
@@ -43,6 +44,6 @@ app.use(async (req, res, next) => {
 });
 ```
 
-The example assumes the application has already reviewed `getVerifiedSourceIp` and supplied the credential securely. It does not automatically convert arbitrary HTTP events into hostile observations. Separate application code decides which authenticated events to submit with `client.record(observation)`.
+The example assumes the application has already reviewed `getVerifiedSourceIp` and `getVerifiedRouteId` and supplied the credential securely. A restriction for `auth.login` does not affect an unrelated route. It does not automatically convert arbitrary HTTP events into hostile observations. Separate application code decides which authenticated events to submit with `client.record(observation)`.
 
 Rollback is a reviewed policy file change to OBSERVE and application restart, or a scoped release through the management API. A durable audit store, Linux peer UID verification, and a browser console require separate qualification.

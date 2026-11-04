@@ -6,9 +6,10 @@ export declare function createLocalNodeGuardClient(options: {
   token: string;
   timeoutMs?: number;
 }): Readonly<{
-  evaluate(sourceIp: string): Promise<{
+  evaluate(sourceIp: string, routeId: string): Promise<{
     application_id: string;
     source_ip: string;
+    route_id: string;
     decision: 'ALLOW' | 'THROTTLE' | 'DENY';
     restriction: null | { policy_id: string; expires_at: string; retry_after_seconds: number };
   }>;

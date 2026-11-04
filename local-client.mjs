@@ -47,10 +47,14 @@ export function createLocalNodeGuardClient({ socketPath, applicationId, token, t
     });
   }
 
-  function evaluate(sourceIp) {
+  function evaluate(sourceIp, routeId) {
     if (!isEligibleSource(sourceIp)) throw new TypeError('evaluate requires a verified eligible public source IP');
-    return post('/v1/decisions/evaluate', { application_id: applicationId, source_ip: sourceIp }).then((result) => {
-      if (!result || result.application_id !== applicationId || result.source_ip !== sourceIp ||
+    if (typeof routeId !== 'string' || !/^[a-z][a-z0-9._-]{1,63}$/.test(routeId)) {
+      throw new TypeError('evaluate requires a verified route ID');
+    }
+    return post('/v1/decisions/evaluate', { application_id: applicationId, source_ip: sourceIp,
+      route_id: routeId }).then((result) => {
+      if (!result || result.application_id !== applicationId || result.source_ip !== sourceIp || result.route_id !== routeId ||
           !['ALLOW', 'THROTTLE', 'DENY'].includes(result.decision) ||
           (result.decision === 'ALLOW' && result.restriction !== null) ||
           (result.decision !== 'ALLOW' && (!result.restriction ||
