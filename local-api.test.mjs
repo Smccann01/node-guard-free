@@ -126,6 +126,33 @@ test('local API rejects reused credentials and existing socket paths', async () 
   }
 });
 
+test('local API releases an IPv6 restriction by equivalent spelling and audits its canonical source', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'nodeguard-api-ipv6-'));
+  const socketPath = path.join(dir, 'guard.sock');
+  const compact = '2606:4700:4700::1111';
+  const expanded = '2606:4700:4700:0:0:0:0:1111';
+  const guard = guardFor('app-a');
+  const api = createLocalNodeGuardApi({ socketPath, managementToken: adminToken,
+    applications: [{ applicationId: 'app-a', token: appAToken, guard }], now: () => at });
+  try {
+    await api.start();
+    assert.equal((await call(socketPath, 'POST', '/v1/observations', appAToken,
+      { ...observation('app-a', 'event-101'), source_ip: expanded })).body.action, 'recorded');
+    assert.equal((await call(socketPath, 'POST', '/v1/observations', appAToken,
+      { ...observation('app-a', 'event-102'), source_ip: compact })).body.action, 'THROTTLE');
+    assert.equal(guard.isBlocked(expanded), true);
+    const released = await call(socketPath, 'POST', '/v1/restrictions/release', adminToken,
+      { application_id: 'app-a', source_ip: expanded });
+    assert.equal(released.body.affected, 1);
+    assert.equal(guard.isBlocked(compact), false);
+    const audit = await call(socketPath, 'GET', '/v1/audit', adminToken);
+    assert.deepEqual(audit.body.entries.map((entry) => entry.source_ip), [compact, compact]);
+  } finally {
+    await api.stop();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('two independent client processes cannot submit or release each other\'s application state', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'nodeguard-api-processes-'));
   const socketPath = path.join(dir, 'guard.sock');

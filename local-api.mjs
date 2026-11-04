@@ -2,7 +2,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { createServer } from 'node:http';
 import { lstat, stat, chmod, unlink } from 'node:fs/promises';
 import path from 'node:path';
-import { isEligibleSource } from './index.mjs';
+import { normalizeEligibleSource } from './guard-core.mjs';
 import { simulatePolicyV1 } from './policy.mjs';
 
 const MAX_BODY_BYTES = 65_536;
@@ -93,7 +93,7 @@ export function createLocalNodeGuardApi({ socketPath, applications, managementTo
         if (body.application_id !== app[0]) return reply(response, 403, { error: 'application_scope' });
         const result = app[1].guard.record(body);
         if (!result.accepted) return reply(response, 422, { error: result.reason });
-        if (result.action !== 'recorded') auditAction(result.action, app[0], body.source_ip, 1);
+        if (result.action !== 'recorded') auditAction(result.action, app[0], normalizeEligibleSource(body.source_ip), 1);
         return reply(response, 200, result);
       }
       if (!matches(authorization, managementHash)) return reply(response, 401, { error: 'unauthorized' });
@@ -114,12 +114,13 @@ export function createLocalNodeGuardApi({ socketPath, applications, managementTo
       }
       if (pathname === '/v1/restrictions/release' && request.method === 'POST') {
         const body = await jsonBody(request);
+        const sourceIp = normalizeEligibleSource(body.source_ip);
         if (Object.keys(body).some((key) => !['application_id', 'source_ip'].includes(key)) ||
-            typeof body.application_id !== 'string' || !apps.has(body.application_id) || !isEligibleSource(body.source_ip)) {
+            typeof body.application_id !== 'string' || !apps.has(body.application_id) || !sourceIp) {
           return reply(response, 400, { error: 'invalid_release' });
         }
-        const affected = apps.get(body.application_id).guard.release(body.source_ip);
-        auditAction('release', body.application_id, body.source_ip, affected);
+        const affected = apps.get(body.application_id).guard.release(sourceIp);
+        auditAction('release', body.application_id, sourceIp, affected);
         return reply(response, 200, { affected });
       }
       if (pathname === '/v1/policies/simulate' && request.method === 'POST') {

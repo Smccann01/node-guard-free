@@ -1,4 +1,4 @@
-import { isEligibleSource, REASON_CODES } from "./guard-core.mjs";
+import { normalizeEligibleSource, REASON_CODES } from "./guard-core.mjs";
 
 export const POLICY_REASON_CODES = Object.freeze([...REASON_CODES, "authentication_failure"]);
 const POLICY_FIELDS = new Set(["schema_version", "policy_id", "application_id", "mode", "route_id", "reason_code", "window_seconds", "threshold", "action", "restriction_seconds"]);
@@ -55,9 +55,10 @@ export function validateObservationV1(observation) {
   if (typeof observation.event_id !== "string" || !EVENT_ID.test(observation.event_id)) throw new TypeError("invalid event_id");
   timestamp(observation.observed_at, "observed_at");
   if (!POLICY_REASON_CODES.includes(observation.reason_code)) throw new TypeError("unknown observation reason_code");
-  if (!isEligibleSource(observation.source_ip)) throw new TypeError("source_ip must be an eligible public IP");
+  const sourceIp = normalizeEligibleSource(observation.source_ip);
+  if (!sourceIp) throw new TypeError("source_ip must be an eligible public IP");
   if (observation.protocol !== "HTTP" && observation.protocol !== "HTTPS") throw new TypeError("protocol must be HTTP or HTTPS");
-  return Object.freeze({ ...observation });
+  return Object.freeze({ ...observation, source_ip: sourceIp });
 }
 
 /** Pure, source-scoped simulation. It does not install a live restriction. */

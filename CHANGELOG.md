@@ -1,5 +1,9 @@
 # Node Guard Free changes
 
+## Unreleased
+
+- Canonicalize eligible IPv6 source addresses before matching thresholds, protected-source checks, active restrictions, release requests, simulations, and local API audit entries. Equivalent spellings now refer to one source throughout the standalone and v1 policy guards.
+
 ## 0.2.0-alpha.9 (staging candidate)
 
 - Carry the same application and local API code as the alpha.8 candidate. This maintenance candidate tests the tag-triggered npm OIDC staging path; it does not include Security Replay or Policy Studio source branches.
