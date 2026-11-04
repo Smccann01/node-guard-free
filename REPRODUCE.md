@@ -24,7 +24,7 @@ To validate the candidate source before an npm release, clone the repository at 
 
 ## Stage a reviewed alpha
 
-The `publish.yml` GitHub Actions workflow checks a reviewed `v0.2.0-alpha.N` tag, runs the checks above, and submits the exact package with `npm stage publish --tag alpha --access public`. A maintainer must inspect the staged tarball and approve it with npm two-factor authentication before the version becomes public. The workflow can also be dispatched against an existing reviewed tag after a failed staging attempt; it must not build from an untagged branch. The npm trusted publisher must match `Smccann01/node-guard-free` and `publish.yml` exactly, with staging allowed. After approval, verify the registry version, tarball integrity, provenance status, and clean installation before changing website install instructions. Until then, this page keeps customers pinned to the published alpha.6.
+The `publish.yml` GitHub Actions workflow checks a reviewed `v0.2.0-alpha.N` tag, runs the checks above, and submits the exact package with `npm stage publish --tag alpha --access public`. A maintainer must inspect the staged tarball and approve it with npm two-factor authentication before the version becomes public. The workflow is tag-triggered; do not build from an untagged branch or use manual dispatch. The npm trusted publisher must match `Smccann01/node-guard-free` and `publish.yml` exactly, with staging allowed. After approval, verify the registry version, tarball integrity, provenance status, and clean installation before changing website install instructions. Until then, this page keeps customers pinned to the published alpha.6.
 
 ## Review the trust boundary
 

@@ -1,13 +1,14 @@
 # Node Guard Free changes
 
-## Unreleased
+## 0.2.0-alpha.10 (staging candidate)
 
-- Canonicalize eligible IPv6 source addresses before matching thresholds, protected-source checks, active restrictions, release requests, simulations, and local API audit entries. Equivalent spellings now refer to one source throughout the standalone and v1 policy guards.
+- Include the canonical IPv6 source correction merged after the alpha.9 tag. Equivalent public IPv6 spellings now map to the same source for the standalone and v1 policy guards and local management API.
+- Keep Security Replay, Policy Studio, and Webhook Shield out of this maintenance package. The public npm `alpha` version remains alpha.6 until a staged candidate passes publisher authorization, independent review, and maintainer approval.
 
 ## 0.2.0-alpha.9 (staging candidate)
 
 - Carry the same application and local API code as the alpha.8 candidate. This maintenance candidate tests the tag-triggered npm OIDC staging path; it does not include Security Replay or Policy Studio source branches.
-- Keep `alpha.6` as the public registry version until a staged alpha.9 package is independently checked and approved by a maintainer with 2FA.
+- The immutable alpha.9 tag failed npm staging authorization and lacks the later IPv6 source correction; it must not be approved as a public package.
 
 ## 0.2.0-alpha.8 (candidate)
 
