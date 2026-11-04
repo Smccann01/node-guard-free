@@ -6,6 +6,8 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { replayIdentityPolicyV2, replayPolicyV1 } from './replay-policy.mjs';
+import { createPolicyGuardV1 } from './policy-runtime.mjs';
+import { createIdentityGuardV2, createVerifiedIdentity } from './identity-policy.mjs';
 
 const policy = {
   schema_version: 1, policy_id: 'login-v1', application_id: 'billing-api',
@@ -26,12 +28,31 @@ test('replay shows chronological restriction and natural expiration without host
   assert.equal(active.enforcement_scope, 'simulation_only');
   assert.match(active.policy_fingerprint_sha256, /^[a-f0-9]{64}$/);
   assert.deepEqual(active.timeline.map((entry) => entry.record_action), ['recorded', 'THROTTLE']);
+  assert.deepEqual(active.timeline.map((entry) => entry.trigger_hit_count), [null, 2]);
   assert.deepEqual(active.timeline.map((entry) => entry.effective_action), ['ALLOW', 'THROTTLE']);
   assert.deepEqual(active.active_restrictions, [{ source_ip: '8.8.8.8', action: 'THROTTLE',
     expires_at: '2026-11-04T10:00:31.000Z' }]);
   const expired = replayPolicyV1({ policy, observations, at: '2026-11-04T10:00:32Z' });
   assert.deepEqual(expired.active_restrictions, []);
   assert.equal(observations.length, 2);
+});
+
+test('v1 replay trigger matches the runtime decision for the same ordered events', async () => {
+  let clock = Date.parse(first.observed_at);
+  const decisions = [];
+  const live = createPolicyGuardV1({ policy, now: () => clock,
+    canActOnSource: () => true, onDecision: (decision) => decisions.push(decision) });
+  for (const observation of [first, second]) {
+    clock = Date.parse(observation.observed_at);
+    live.record(observation);
+  }
+  await Promise.resolve();
+  const replay = replayPolicyV1({ policy, observations: [first, second],
+    at: '2026-11-04T10:00:20Z' });
+  assert.equal(decisions.length, 1);
+  assert.equal(replay.timeline[1].record_action, decisions[0].action);
+  assert.equal(replay.timeline[1].trigger_hit_count, decisions[0].hit_count);
+  assert.equal(replay.timeline[1].restriction_expires_at, decisions[0].restriction_expires_at);
 });
 
 test('policy fingerprint is stable across key order and changes when behavior changes', () => {
@@ -137,6 +158,29 @@ test('v2 replay uses synthetic identities and shows restriction expiry', () => {
   assert.equal(JSON.stringify(active).includes('subject_id:'), false);
   const expired = replayIdentityPolicyV2({ policy: v2, entries, at: '2026-11-04T10:00:32Z' });
   assert.deepEqual(expired.active_restrictions, []);
+});
+
+test('v2 synthetic replay trigger matches the runtime decision for the same events', async () => {
+  const v2 = { ...policy, schema_version: 2, identity_scope: 'subject_id', excluded_route_ids: [] };
+  const entries = [first, second].map((observation) => ({
+    observation: { ...observation, schema_version: 2 }, fixture_identity: 'fixture:member_01',
+  }));
+  let clock = Date.parse(first.observed_at);
+  const decisions = [];
+  const live = createIdentityGuardV2({ policy: v2, now: () => clock,
+    canActOnSource: () => true, onDecision: (decision) => decisions.push(decision) });
+  const identity = createVerifiedIdentity({ subjectId: 'fixture:member_01' });
+  for (const entry of entries) {
+    clock = Date.parse(entry.observation.observed_at);
+    live.record(entry.observation, identity);
+  }
+  await Promise.resolve();
+  const replay = replayIdentityPolicyV2({ policy: v2, entries,
+    at: '2026-11-04T10:00:20Z' });
+  assert.equal(decisions.length, 1);
+  assert.equal(replay.timeline[1].record_action, decisions[0].action);
+  assert.equal(replay.timeline[1].trigger_hit_count, decisions[0].hit_count);
+  assert.equal(replay.timeline[1].restriction_expires_at, decisions[0].restriction_expires_at);
 });
 
 test('v2 replay rejects untrusted identity fixture fields and mismatched scope', () => {

@@ -8,6 +8,7 @@ export type ReplayEventV1 = Readonly<{
   source_ref?: string;
   accepted: boolean;
   record_action: 'recorded' | 'OBSERVE' | 'THROTTLE' | 'DENY' | 'REJECTED';
+  trigger_hit_count: number | null;
   rejection_reason?: string;
   effective_action: 'ALLOW' | 'THROTTLE' | 'DENY';
   restriction_expires_at: string | null;
