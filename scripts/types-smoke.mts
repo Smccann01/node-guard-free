@@ -22,6 +22,9 @@ const policyDiff: PolicyDiff = diffPolicies(policy, { ...policy, threshold: 3 })
 void policyDiff;
 const policyComparison = comparePolicySimulation(policy, policy, [], { at: new Date().toISOString() });
 void policyComparison;
+const redactedComparison = comparePolicySimulation(policy, policy, [],
+  { at: new Date().toISOString(), redactSources: true });
+void redactedComparison.source_redacted;
 const observation: ObservationV1 = {
   schema_version: 1, application_id: 'billing-api', event_id: 'event-001',
   observed_at: new Date().toISOString(), route_id: 'auth.login',

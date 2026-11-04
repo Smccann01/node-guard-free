@@ -98,6 +98,50 @@ test('compares point-in-time decisions on the same observations without activati
   }
 });
 
+test('redacted comparisons use one source alias across before and after decisions', () => {
+  const observations = ['event-101', 'event-102'].map((event_id) => ({
+    schema_version: 1, application_id: 'billing-api', event_id,
+    observed_at: '2026-11-04T10:00:00Z', route_id: 'auth.login',
+    reason_code: 'authentication_failure', source_ip: '8.8.8.8', protocol: 'HTTPS',
+  }));
+  const at = '2026-11-04T10:00:10Z';
+  const proposed = { ...base, mode: 'ENFORCE', threshold: 2 };
+  const report = comparePolicySimulation(base, proposed, observations, { at, redactSources: true });
+  const change = report.decision_changes[0];
+  assert.equal(report.source_redacted, true);
+  assert.match(change.source_ref, /^source-[a-f0-9]{24}$/);
+  assert.equal(change.before.source_ref, change.source_ref);
+  assert.equal(change.after.source_ref, change.source_ref);
+  assert.equal(JSON.stringify(report).includes('8.8.8.8'), false);
+  assert.equal(change.before.source_ip, undefined);
+  assert.throws(() => comparePolicySimulation(base, proposed, observations,
+    { at, redactSources: 'yes' }), /redactSources/);
+
+  const v2 = { ...base, schema_version: 2, identity_scope: 'source_ip', excluded_route_ids: [] };
+  const entries = observations.map((observation) => ({ observation: { ...observation, schema_version: 2 } }));
+  const v2Report = comparePolicySimulation(v2, { ...v2, mode: 'ENFORCE', threshold: 2 },
+    entries, { at, redactSources: true });
+  assert.equal(v2Report.decision_changes[0].identity_ref,
+    v2Report.decision_changes[0].after.identity_ref);
+  assert.equal(JSON.stringify(v2Report).includes('8.8.8.8'), false);
+
+  const directory = mkdtempSync(path.join(tmpdir(), 'nodeguard-policy-redacted-'));
+  try {
+    const current = path.join(directory, 'current.json');
+    const next = path.join(directory, 'proposed.json');
+    const fixtures = path.join(directory, 'fixtures.json');
+    writeFileSync(current, JSON.stringify(base));
+    writeFileSync(next, JSON.stringify(proposed));
+    writeFileSync(fixtures, JSON.stringify(observations));
+    const cli = fileURLToPath(new URL('./bin/nodeguard.mjs', import.meta.url));
+    const output = execFileSync(process.execPath,
+      [cli, 'policy', 'compare', current, next, fixtures, '--at', at, '--redact'],
+      { encoding: 'utf8' });
+    assert.equal(JSON.parse(output).source_redacted, true);
+    assert.equal(output.includes('8.8.8.8'), false);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
 test('refuses comparing incompatible identity scopes or untrusted fixture fields', () => {
   const v2 = { ...base, schema_version: 2, identity_scope: 'subject_id', excluded_route_ids: [] };
   assert.throws(() => comparePolicySimulation(v2, { ...v2, identity_scope: 'source_ip' }, [],

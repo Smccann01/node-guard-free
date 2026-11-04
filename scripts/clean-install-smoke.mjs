@@ -67,6 +67,15 @@ for (const event_id of ['event-003', 'event-004']) v2.record({ schema_version: 2
 if (!v2.isBlocked({ sourceIp: '8.8.8.8', routeId: 'auth.login', identity })) process.exit(5);
 `);
   execFileSync(process.execPath, [smokePath], { stdio: "pipe" });
+  const workflowPath = path.join(appRoot, "node_modules", "@network-decode", "node-guard",
+    "examples", "security-tools-workflow.mjs");
+  const workflowOutput = execFileSync(process.execPath, [workflowPath], { encoding: "utf8" });
+  const workflow = JSON.parse(workflowOutput);
+  if (!workflow.delivery.accepted || !workflow.policy_review.source_redacted ||
+      workflow.replay.enforcement_scope !== "simulation_only" ||
+      workflowOutput.includes("8.8.8.8")) {
+    throw new Error("clean package security tools workflow failed");
+  }
   process.stdout.write("Clean tarball install passed: CLI, OBSERVE default, local Guard, v1 and v2 runtimes, replay, policy diff, Webhook Shield, trusted source, Next route export.\n");
 } finally {
   await rm(temporaryRoot, { recursive: true, force: true });

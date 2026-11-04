@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { simulatePolicyV1, validatePolicyV1 } from './policy.mjs';
 import { simulateIdentityPolicyV2, validateIdentityPolicyV2 } from './identity-policy.mjs';
 
@@ -64,7 +64,8 @@ export function diffPolicies(beforeInput, afterInput) {
 }
 
 /** Compares two policies against the same synthetic or sanitized observations at one time. */
-export function comparePolicySimulation(beforeInput, afterInput, observations, { at } = {}) {
+export function comparePolicySimulation(beforeInput, afterInput, observations, { at, redactSources = false } = {}) {
+  if (typeof redactSources !== 'boolean') throw new TypeError('redactSources must be a boolean');
   const diff = diffPolicies(beforeInput, afterInput);
   const before = validate(beforeInput);
   const after = validate(afterInput);
@@ -77,16 +78,30 @@ export function comparePolicySimulation(beforeInput, afterInput, observations, {
   const key = before.schema_version === 1 ? 'source_ip' : 'identity_ref';
   const current = new Map(beforeResults.map((result) => [result[key], result]));
   const proposed = new Map(afterResults.map((result) => [result[key], result]));
+  const redactionKey = redactSources ? randomBytes(32) : null;
+  const sourceScoped = before.schema_version === 1 || before.identity_scope === 'source_ip';
+  const sourceAlias = (source) => `source-${createHmac('sha256', redactionKey).update(source).digest('hex').slice(0, 24)}`;
+  const displayResult = (result) => {
+    if (!result || !redactionKey || !sourceScoped) return result;
+    if (key === 'source_ip') {
+      const { source_ip, ...rest } = result;
+      return { source_ref: sourceAlias(source_ip), ...rest };
+    }
+    return { ...result, identity_ref: sourceAlias(result.identity_ref) };
+  };
   const decisionChanges = [...new Set([...current.keys(), ...proposed.keys()])].sort().flatMap((subject) => {
     const previous = current.get(subject) ?? null;
     const next = proposed.get(subject) ?? null;
     if (previous?.decision === next?.decision && previous?.restriction_expires_at === next?.restriction_expires_at) return [];
-    return [{ [key]: subject, before: previous, after: next }];
+    return [{ [redactionKey && sourceScoped && key === 'source_ip' ? 'source_ref' : key]:
+      redactionKey && sourceScoped ? sourceAlias(subject) : subject,
+    before: displayResult(previous), after: displayResult(next) }];
   });
   return {
     ...diff,
     simulation_at: at,
     fixture_count: observations.length,
+    source_redacted: redactSources,
     decision_changes: decisionChanges,
     comparison_scope: 'simulation_only',
   };

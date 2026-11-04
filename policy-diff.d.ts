@@ -20,10 +20,11 @@ export declare function comparePolicySimulation(
   before: PolicyV1 | IdentityPolicyV2,
   after: PolicyV1 | IdentityPolicyV2,
   observations: ObservationV1[] | Array<{ observation: IdentityObservationV2; fixture_identity?: string }>,
-  options: { at: string },
+  options: { at: string; redactSources?: boolean },
 ): PolicyDiff & {
   simulation_at: string;
   fixture_count: number;
+  source_redacted: boolean;
   decision_changes: Array<Record<string, unknown>>;
   comparison_scope: 'simulation_only';
 };
