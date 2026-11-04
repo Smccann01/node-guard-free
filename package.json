@@ -1,6 +1,6 @@
 {
   "name": "@network-decode/node-guard",
-  "version": "0.2.0-alpha.6",
+  "version": "0.2.0-alpha.7",
   "license": "Apache-2.0",
   "type": "module",
   "repository": {
@@ -16,6 +16,7 @@
     "README.md",
     "DEVELOPER_SETUP.md",
     "NEXT_ROUTE_GUIDE.md",
+    "LOCAL_API.md",
     "index.mjs",
     "index.d.ts",
     "guard-core.mjs",
@@ -29,6 +30,8 @@
     "trusted-source.d.ts",
     "next-route.mjs",
     "next-route.d.ts",
+    "local-api.mjs",
+    "local-api.d.ts",
     "bin/nodeguard.mjs",
     "examples/auth-policy.json",
     "examples/auth-observations.json",
@@ -60,6 +63,10 @@
     "./next-route": {
       "types": "./next-route.d.ts",
       "default": "./next-route.mjs"
+    },
+    "./local-api": {
+      "types": "./local-api.d.ts",
+      "default": "./local-api.mjs"
     },
     "./package.json": "./package.json"
   },

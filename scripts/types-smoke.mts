@@ -4,6 +4,7 @@ import { createNextRouteGuard } from '@network-decode/node-guard/next-route';
 import { createPolicyGuardV1 } from '@network-decode/node-guard/policy-runtime';
 import type { PolicyV1, ObservationV1 } from '@network-decode/node-guard/policy';
 import { createTrustedSourceResolver } from '@network-decode/node-guard/trusted-source';
+import { createLocalNodeGuardApi } from '@network-decode/node-guard/local-api';
 
 const guard: GuardInstance = createNodeGuard({ mode: 'observe' });
 const policy: PolicyV1 = {
@@ -22,3 +23,6 @@ const resolveSource = createTrustedSourceResolver();
 const express = createExpressNodeGuard({ guard, getVerifiedSourceIp: () => '8.8.8.8' });
 const next = createNextRouteGuard({ guard, getVerifiedSourceIp: () => '8.8.8.8' });
 void [express, next, resolveSource];
+const api = createLocalNodeGuardApi({ socketPath: '/tmp/nodeguard-types-smoke.sock', managementToken: 'm'.repeat(32),
+  applications: [{ applicationId: 'billing-api', token: 'a'.repeat(32), guard: runtime }] });
+void api;
