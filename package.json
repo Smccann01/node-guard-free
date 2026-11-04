@@ -42,6 +42,10 @@
     "identity-next-route.d.ts",
     "local-api.mjs",
     "local-api.d.ts",
+    "local-client.mjs",
+    "local-client.d.ts",
+    "local-express.mjs",
+    "local-express.d.ts",
     "bin/nodeguard.mjs",
     "examples/auth-policy.json",
     "examples/auth-observations.json",
@@ -91,6 +95,14 @@
     "./local-api": {
       "types": "./local-api.d.ts",
       "default": "./local-api.mjs"
+    },
+    "./local-client": {
+      "types": "./local-client.d.ts",
+      "default": "./local-client.mjs"
+    },
+    "./local-express": {
+      "types": "./local-express.d.ts",
+      "default": "./local-express.mjs"
     },
     "./package.json": "./package.json"
   },

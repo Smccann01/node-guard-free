@@ -1,5 +1,10 @@
 # Node Guard Free changes
 
+## Unreleased local coordinator candidate
+
+- Add an app-scoped decision endpoint and a Unix-socket client so multiple local workers can evaluate one coordinator's source-scoped v1 state.
+- Preserve separate management credentials, one-host socket permissions, and explicit handling when the coordinator is unavailable. The coordinator state and audit ring still clear on restart.
+
 ## 0.2.0-alpha.8 (candidate)
 
 - Add an experimental v2 application policy with server-verified subject, tenant, or API-key identity. A source-IP scope remains available. The v1 API and published `0.2.0-alpha.6` behavior are unchanged.
