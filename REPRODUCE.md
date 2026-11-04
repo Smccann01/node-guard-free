@@ -9,7 +9,7 @@ Create an empty application directory. Run:
 ```sh
 node --version
 npm view @network-decode/node-guard dist-tags --json
-npm install --ignore-scripts @network-decode/node-guard@0.2.0-alpha.10
+npm install --ignore-scripts @network-decode/node-guard@0.2.0-alpha.11
 npm ls @network-decode/node-guard
 npx nodeguard init
 npx nodeguard doctor nodeguard.policy.json

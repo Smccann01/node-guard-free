@@ -1,6 +1,6 @@
 # Node Guard security tools integration candidate
 
-This branch combines the separate Security Replay, Policy Studio, and Webhook Shield source candidates against the published alpha.10 base. Its package version is `0.2.0-alpha.11-dev.0` to distinguish the combined source tree from the immutable public alpha.10 artifact. It is **not** an npm release.
+This branch combines the separate Security Replay, Policy Studio, and Webhook Shield source candidates against the published alpha.10 base. Its package version is `0.2.0-alpha.11`. The source commit alone is **not** an npm release; verify the registry artifact before claiming publication.
 
 | Tool | Current scope | Excluded behavior |
 | --- | --- | --- |

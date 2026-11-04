@@ -1,6 +1,6 @@
 # Node Guard Free
 
-> Development branch note: this `0.2.0-alpha.11-dev.0` integration candidate combines [local replay](REPLAY.md), read-only [Policy Studio](POLICY_STUDIO.md), and customer-controlled [Webhook Shield](WEBHOOK_SHIELD.md). The public npm `alpha` release is `0.2.0-alpha.10`; its default `latest` tag still points to alpha.6. These three tools are not in either published package. See [identity scopes v2](IDENTITY_SCOPES_V2.md) for the trust contract and limits.
+> The `0.2.0-alpha.11` candidate combines [local replay](REPLAY.md), read-only [Policy Studio](POLICY_STUDIO.md), and customer-controlled [Webhook Shield](WEBHOOK_SHIELD.md). Install this exact version only after it appears in the npm registry; the previously verified public alpha is `0.2.0-alpha.10`. See [identity scopes v2](IDENTITY_SCOPES_V2.md) for the trust contract and limits.
 
 Node Guard Free is a local application protection SDK for Node.js. It requires no account, license key, HoneyMesh agent, root access, or subscription. It does not attach XDP, enforce host firewall rules, or participate in Exchange.
 
@@ -19,7 +19,7 @@ Node Guard Free is a local application protection SDK for Node.js. It requires n
 Install the published alpha with:
 
 ```sh
-npm install @network-decode/node-guard@0.2.0-alpha.10
+npm install @network-decode/node-guard@0.2.0-alpha.11
 npx nodeguard init
 npx nodeguard doctor nodeguard.policy.json
 npx nodeguard policy validate nodeguard.policy.json
@@ -65,7 +65,7 @@ This package stores no request bodies, tokens, or passwords in the standalone en
 - `nodeguard policy diff current-policy.json proposed-policy.json`
 - `nodeguard policy compare current-policy.json proposed-policy.json observations.json --at 2026-11-03T18:00:00Z`
 - `nodeguard policy test policy.json observations.json --at 2026-11-03T18:00:00Z`
-- `nodeguard replay policy.json observations.json --at 2026-11-03T18:00:00Z [--protected source-ips.json] [--redact]` (source candidate)
+- `nodeguard replay policy.json observations.json --at 2026-11-03T18:00:00Z [--protected source-ips.json] [--redact]`
 - `nodeguard inspect policy.json`
 - `nodeguard export policy.json --output sanitized-policy.json`
 

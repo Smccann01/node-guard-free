@@ -1,4 +1,4 @@
-# Webhook Shield source candidate
+# Webhook Shield
 
 Webhook Shield verifies a **Node Guard v1** HMAC envelope for webhooks whose sender you control. It accepts exact request bytes, a decimal epoch-seconds timestamp, a unique event ID, and a lowercase hexadecimal SHA-256 signature. It rejects modified messages, stale timestamps, duplicates inside the accepted window, oversized bodies, and full replay storage. No account, license, or HoneyMesh agent is required.
 
@@ -57,6 +57,6 @@ app.post('/webhooks/my-service', express.raw({ type: 'application/json', limit: 
 });
 ```
 
-This source candidate is not in the public npm alpha. Adapt the example only after a package containing it has been published and verified.
+This module is included in the `0.2.0-alpha.11` release candidate. Verify that exact package in the npm registry before using the import shown above.
 
 The replay cache is bounded and lives in one process. A restart or another process does not share that cache. For multi-process or durable replay prevention, store verified event IDs in an atomic shared store before performing side effects. The built-in clock-regression check rejects requests if system time moves backward during a process lifetime. Keep time synchronized and monitor rejected requests. Webhook Shield does not parse JSON, send HTTP responses, manage endpoint secrets, or create host-level blocks.

@@ -1,9 +1,9 @@
 # Node Guard Free changes
 
-## 0.2.0-alpha.11-dev.0 (unpublished integration candidate)
+## 0.2.0-alpha.11 (release candidate)
 
-- Add deterministic local replay of ordered v1 and synthetic v2 policy observations. Timelines show decision transitions and bounded state without network or host enforcement. ENFORCE CLI replay requires an explicit protected-source file. This is not in the public npm alpha.
-- Add read-only policy diff and deterministic shared-fixture comparison for local review. This is not in the public npm alpha and does not activate a policy.
+- Add deterministic local replay of ordered v1 and synthetic v2 policy observations. Timelines show decision transitions and bounded state without network or host enforcement. ENFORCE CLI replay requires an explicit protected-source file.
+- Add read-only policy diff and deterministic shared-fixture comparison for local review. This does not activate a policy.
 - Add a customer-controlled raw-body HMAC Webhook Shield verifier with bounded size, signed timestamp and event ID, one-process replay protection, and a fail-closed clock check. It is not compatible with third-party webhook signatures without a dedicated adapter.
 - Add redacted Policy Studio comparisons and a packaged local workflow that verifies a synthetic signed delivery before policy review and replay. All output remains simulation-only.
 
