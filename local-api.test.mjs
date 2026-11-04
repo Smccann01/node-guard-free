@@ -178,6 +178,28 @@ test('two worker processes share one app decision state through the local coordi
   assert.throws(() => client.evaluate('8.8.8.8', 'bad route'), /verified route/);
 });
 
+test('management audit reports when its bounded history dropped older actions', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'nodeguard-api-audit-'));
+  const socketPath = path.join(dir, 'guard.sock');
+  const api = createLocalNodeGuardApi({ socketPath, managementToken: adminToken, maxAuditEntries: 1,
+    applications: [{ applicationId: 'app-a', token: appAToken, guard: guardFor('app-a') }], now: () => at });
+  try {
+    await api.start();
+    await call(socketPath, 'POST', '/v1/observations', appAToken, observation('app-a', 'event-audit-1'));
+    await call(socketPath, 'POST', '/v1/observations', appAToken, observation('app-a', 'event-audit-2'));
+    const first = await call(socketPath, 'GET', '/v1/audit', adminToken);
+    assert.equal(first.body.truncated, false);
+    assert.equal(first.body.entries.length, 1);
+    await call(socketPath, 'POST', '/v1/restrictions/release', adminToken, { application_id: 'app-a', source_ip: '8.8.8.8' });
+    const second = await call(socketPath, 'GET', '/v1/audit', adminToken);
+    assert.equal(second.body.truncated, true);
+    assert.deepEqual(second.body.entries.map((entry) => entry.action), ['release']);
+  } finally {
+    await api.stop();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('local client rejects a coordinator response for a different application', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'nodeguard-api-response-'));
   const socketPath = path.join(dir, 'wrong.sock');

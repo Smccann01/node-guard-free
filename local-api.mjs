@@ -75,12 +75,16 @@ export function createLocalNodeGuardApi({ socketPath, applications, managementTo
   }
 
   const audit = [];
+  let auditTruncated = false;
   let server;
   let socketIdentity;
   function auditAction(action, applicationId, sourceIp, affected) {
     audit.push(Object.freeze({ at: new Date(now()).toISOString(), action, application_id: applicationId,
       policy_id: apps.get(applicationId).guard.policy.policy_id, source_ip: sourceIp, affected }));
-    if (audit.length > maxAuditEntries) audit.shift();
+    if (audit.length > maxAuditEntries) {
+      audit.shift();
+      auditTruncated = true;
+    }
   }
 
   async function handle(request, response) {
@@ -145,7 +149,7 @@ export function createLocalNodeGuardApi({ socketPath, applications, managementTo
         return reply(response, 200, { results });
       }
       if (pathname === '/v1/audit' && request.method === 'GET') {
-        return reply(response, 200, { entries: audit.slice(-1000), truncated: audit.length > 1000 });
+        return reply(response, 200, { entries: audit.slice(-1000), truncated: auditTruncated || audit.length > 1000 });
       }
       return reply(response, 404, { error: 'not_found' });
     } catch (error) {
