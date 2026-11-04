@@ -22,6 +22,7 @@ test("v2 policy and observation reject ambiguity and network-supplied identity f
   assert.throws(() => validateIdentityObservationV2(event("event-001", { subject_id: "user-from-body" })), /unknown field/);
   assert.throws(() => validateIdentityObservationV2(event("event-001", { source_ip: "127.0.0.1" })), /eligible public IP/);
   assert.throws(() => createVerifiedIdentity({ subjectId: "user\nadmin" }), /bounded/);
+  assert.throws(() => createVerifiedIdentity({ subjectID: "user" }), /only subjectId/);
   assert.throws(() => createVerifiedIdentity({}), /at least one/);
 });
 
@@ -96,8 +97,9 @@ test("source-scoped active view honors a newly protected address without deletin
   protectedSource = true;
   assert.equal(guard.isBlocked({ sourceIp: "8.8.8.8", routeId: "auth.login" }), false);
   assert.deepEqual(guard.snapshot(), []);
+  assert.equal(guard.release({ sourceIp: "8.8.8.8" }), 1);
   protectedSource = false;
-  assert.equal(guard.snapshot().length, 1);
+  assert.deepEqual(guard.snapshot(), []);
 });
 
 test("tenant and API key scopes select the right verified identity and obey source protection", () => {

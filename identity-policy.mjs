@@ -15,7 +15,12 @@ function boundedString(value, name) {
 }
 
 /** Build this object only after application authentication; it cannot be reconstructed from JSON. */
-export function createVerifiedIdentity({ subjectId, tenantId, apiKeyId } = {}) {
+export function createVerifiedIdentity(input = {}) {
+  if (!input || typeof input !== "object" || Array.isArray(input) ||
+      Object.keys(input).some((key) => !["subjectId", "tenantId", "apiKeyId"].includes(key))) {
+    throw new TypeError("verified identity must contain only subjectId, tenantId, or apiKeyId");
+  }
+  const { subjectId, tenantId, apiKeyId } = input;
   const values = {};
   for (const [field, value] of [["subject_id", subjectId], ["tenant_id", tenantId], ["api_key_id", apiKeyId]]) {
     if (value !== undefined) values[field] = boundedString(value, field);
@@ -189,8 +194,9 @@ export function createIdentityGuardV2({ policy: policyInput, canActOnSource, onD
   }
 
   function release({ sourceIp, identity } = {}) {
-    if (!sourceAllowed(sourceIp)) return 0;
-    return Number(state.delete(keyFor(normalizeEligibleIp(sourceIp), identity)));
+    const normalized = normalizeEligibleIp(sourceIp);
+    if (!normalized) return 0;
+    return Number(state.delete(keyFor(normalized, identity)));
   }
 
   function snapshot() {
