@@ -217,6 +217,29 @@ test('local client rejects a coordinator response for a different application', 
   }
 });
 
+test('local client deadline cannot be extended by a trickling coordinator response', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'nodeguard-api-slow-'));
+  const socketPath = path.join(dir, 'slow.sock');
+  const fake = createServer((_request, response) => {
+    response.writeHead(200, { 'content-type': 'application/json' });
+    response.write('{');
+    let ticks = 0;
+    const trickle = setInterval(() => {
+      if (++ticks < 20) response.write(' ');
+      else { clearInterval(trickle); response.end('}'); }
+    }, 20);
+    response.on('close', () => clearInterval(trickle));
+  });
+  try {
+    await new Promise((resolve) => fake.listen(socketPath, resolve));
+    const client = createLocalNodeGuardClient({ socketPath, applicationId: 'app-a', token: appAToken, timeoutMs: 100 });
+    await assert.rejects(client.evaluate('8.8.8.8', 'auth.login'), /coordinator timed out/);
+  } finally {
+    await new Promise((resolve) => fake.close(resolve));
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('local API rejects reused credentials and existing socket paths', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'nodeguard-api-'));
   try {

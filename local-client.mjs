@@ -32,8 +32,9 @@ export function createLocalNodeGuardClient({ socketPath, applicationId, token, t
           if (bytes > MAX_RESPONSE_BYTES) incoming.destroy(new Error('coordinator response too large'));
           else chunks.push(chunk);
         });
-        incoming.on('error', reject);
+        incoming.on('error', (error) => { clearTimeout(deadline); reject(error); });
         incoming.on('end', () => {
+          clearTimeout(deadline);
           try {
             const parsed = JSON.parse(Buffer.concat(chunks).toString('utf8'));
             if (incoming.statusCode !== 200) throw new Error(`coordinator returned HTTP ${incoming.statusCode}`);
@@ -41,8 +42,9 @@ export function createLocalNodeGuardClient({ socketPath, applicationId, token, t
           } catch (error) { reject(error); }
         });
       });
-      outgoing.setTimeout(timeoutMs, () => outgoing.destroy(new Error('coordinator timed out')));
-      outgoing.on('error', reject);
+      const deadline = setTimeout(() => outgoing.destroy(new Error('coordinator timed out')), timeoutMs);
+      deadline.unref?.();
+      outgoing.on('error', (error) => { clearTimeout(deadline); reject(error); });
       outgoing.end(data);
     });
   }
