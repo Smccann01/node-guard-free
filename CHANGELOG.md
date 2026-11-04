@@ -1,9 +1,9 @@
 # Node Guard Free changes
 
-## 0.2.0-alpha.10 (staging candidate)
+## 0.2.0-alpha.10 (public alpha)
 
 - Include the canonical IPv6 source correction merged after the alpha.9 tag. Equivalent public IPv6 spellings now map to the same source for the standalone and v1 policy guards and local management API.
-- Keep Security Replay, Policy Studio, and Webhook Shield out of this maintenance package. The public npm `alpha` version remains alpha.6 until a staged candidate passes publisher authorization, independent review, and maintainer approval.
+- Keep Security Replay, Policy Studio, and Webhook Shield out of this published maintenance package. The exact staged tarball was reviewed and approved under a scoped one-person exception for this free experimental alpha; that exception does not authorize later releases.
 
 ## 0.2.0-alpha.9 (staging candidate)
 

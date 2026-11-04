@@ -1,6 +1,6 @@
 # Node Guard Free
 
-> Development branch note: this alpha.10 staging candidate includes experimental identity-scoped policy v2 modules, a local API candidate, and canonical IPv6 source handling. The public npm `alpha` release remains `0.2.0-alpha.6` until a later package passes staging and maintainer review. See [identity scopes v2](IDENTITY_SCOPES_V2.md) for the trust contract and limits.
+> Published alpha note: `0.2.0-alpha.10` is available under npm's `alpha` tag. The default `latest` tag still points to alpha.6, so pin the version below. This package includes experimental identity-scoped policy v2 modules, a local API candidate, and canonical IPv6 source handling. Security Replay, Policy Studio, and Webhook Shield remain unpublished source candidates. See [identity scopes v2](IDENTITY_SCOPES_V2.md) for the trust contract and limits.
 
 Node Guard Free is a local application protection SDK for Node.js. It requires no account, license key, HoneyMesh agent, root access, or subscription. It does not attach XDP, enforce host firewall rules, or participate in Exchange.
 
@@ -19,7 +19,7 @@ Node Guard Free is a local application protection SDK for Node.js. It requires n
 Install the published alpha with:
 
 ```sh
-npm install @network-decode/node-guard@0.2.0-alpha.6
+npm install @network-decode/node-guard@0.2.0-alpha.10
 npx nodeguard init
 npx nodeguard doctor nodeguard.policy.json
 npx nodeguard policy validate nodeguard.policy.json
