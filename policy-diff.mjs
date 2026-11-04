@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
-import { validatePolicyV1 } from './policy.mjs';
-import { validateIdentityPolicyV2 } from './identity-policy.mjs';
+import { simulatePolicyV1, validatePolicyV1 } from './policy.mjs';
+import { simulateIdentityPolicyV2, validateIdentityPolicyV2 } from './identity-policy.mjs';
 
 const FIELDS = ['schema_version', 'policy_id', 'application_id', 'mode', 'route_id',
   'reason_code', 'window_seconds', 'threshold', 'action', 'restriction_seconds',
@@ -60,5 +60,34 @@ export function diffPolicies(beforeInput, afterInput) {
     changes,
     review_reasons: reviewReasons,
     activation: 'none',
+  };
+}
+
+/** Compares two policies against the same synthetic or sanitized observations at one time. */
+export function comparePolicySimulation(beforeInput, afterInput, observations, { at } = {}) {
+  const diff = diffPolicies(beforeInput, afterInput);
+  const before = validate(beforeInput);
+  const after = validate(afterInput);
+  if (before.schema_version === 2 && before.identity_scope !== after.identity_scope) {
+    throw new TypeError('identity_scope changes require separate fixtures and review');
+  }
+  const simulate = before.schema_version === 1 ? simulatePolicyV1 : simulateIdentityPolicyV2;
+  const beforeResults = simulate(before, observations, { at });
+  const afterResults = simulate(after, observations, { at });
+  const key = before.schema_version === 1 ? 'source_ip' : 'identity_ref';
+  const current = new Map(beforeResults.map((result) => [result[key], result]));
+  const proposed = new Map(afterResults.map((result) => [result[key], result]));
+  const decisionChanges = [...new Set([...current.keys(), ...proposed.keys()])].sort().flatMap((subject) => {
+    const previous = current.get(subject) ?? null;
+    const next = proposed.get(subject) ?? null;
+    if (previous?.decision === next?.decision && previous?.restriction_expires_at === next?.restriction_expires_at) return [];
+    return [{ [key]: subject, before: previous, after: next }];
+  });
+  return {
+    ...diff,
+    simulation_at: at,
+    fixture_count: observations.length,
+    decision_changes: decisionChanges,
+    comparison_scope: 'simulation_only',
   };
 }

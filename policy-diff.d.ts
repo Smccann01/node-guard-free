@@ -1,5 +1,7 @@
 import type { PolicyV1 } from './policy.js';
 import type { IdentityPolicyV2 } from './identity-policy.js';
+import type { ObservationV1 } from './policy.js';
+import type { IdentityObservationV2 } from './identity-policy.js';
 
 export type PolicyDiff = {
   schema_version: 1;
@@ -14,3 +16,14 @@ export type PolicyDiff = {
   activation: 'none';
 };
 export declare function diffPolicies(before: PolicyV1 | IdentityPolicyV2, after: PolicyV1 | IdentityPolicyV2): PolicyDiff;
+export declare function comparePolicySimulation(
+  before: PolicyV1 | IdentityPolicyV2,
+  after: PolicyV1 | IdentityPolicyV2,
+  observations: ObservationV1[] | Array<{ observation: IdentityObservationV2; fixture_identity?: string }>,
+  options: { at: string },
+): PolicyDiff & {
+  simulation_at: string;
+  fixture_count: number;
+  decision_changes: Array<Record<string, unknown>>;
+  comparison_scope: 'simulation_only';
+};
