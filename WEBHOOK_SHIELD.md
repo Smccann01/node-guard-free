@@ -57,6 +57,6 @@ app.post('/webhooks/my-service', express.raw({ type: 'application/json', limit: 
 });
 ```
 
-This module is included in the `0.2.0-alpha.11` release candidate. Verify that exact package in the npm registry before using the import shown above.
+This module is included in the verified public `0.2.0-alpha.11` package. Pin that exact version when using the import shown above.
 
 The replay cache is bounded and lives in one process. A restart or another process does not share that cache. For multi-process or durable replay prevention, store verified event IDs in an atomic shared store before performing side effects. The built-in clock-regression check rejects requests if system time moves backward during a process lifetime. Keep time synchronized and monitor rejected requests. Webhook Shield does not parse JSON, send HTTP responses, manage endpoint secrets, or create host-level blocks.

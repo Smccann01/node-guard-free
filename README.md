@@ -1,6 +1,6 @@
 # Node Guard Free
 
-> The `0.2.0-alpha.11` candidate combines [local replay](REPLAY.md), read-only [Policy Studio](POLICY_STUDIO.md), and customer-controlled [Webhook Shield](WEBHOOK_SHIELD.md). Install this exact version only after it appears in the npm registry; the previously verified public alpha is `0.2.0-alpha.10`. See [identity scopes v2](IDENTITY_SCOPES_V2.md) for the trust contract and limits.
+> The public `0.2.0-alpha.11` release combines [local replay](REPLAY.md), read-only [Policy Studio](POLICY_STUDIO.md), and customer-controlled [Webhook Shield](WEBHOOK_SHIELD.md). Its npm `alpha` tag, registry signature, provenance, and clean install were verified. The default `latest` tag remains `0.2.0-alpha.6`. See [identity scopes v2](IDENTITY_SCOPES_V2.md) for the trust contract and limits.
 
 Node Guard Free is a local application protection SDK for Node.js. It requires no account, license key, HoneyMesh agent, root access, or subscription. It does not attach XDP, enforce host firewall rules, or participate in Exchange.
 
