@@ -1,0 +1,38 @@
+name: Publish Node Guard alpha
+
+on:
+  push:
+    tags:
+      - 'v*-alpha.*'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: npm-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'Smccann01/node-guard-free'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
+      - run: npm install --global npm@11.5.1
+      - name: Verify release tag and npm version
+        run: |
+          node -e "const p=require('./package.json'); if (process.env.GITHUB_REF_NAME !== 'v'+p.version || !/^0\\.2\\.0-alpha\\.[0-9]+$/.test(p.version)) process.exit(1)"
+          npm --version
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run smoke:package
+      - run: npm run smoke:next
+      - name: Publish with npm trusted publisher
+        run: npm publish --tag alpha --access public

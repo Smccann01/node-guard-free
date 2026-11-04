@@ -18,6 +18,7 @@
     "NEXT_ROUTE_GUIDE.md",
     "IDENTITY_SCOPES_V2.md",
     "LOCAL_API.md",
+    "RELEASE.md",
     "index.mjs",
     "index.d.ts",
     "guard-core.mjs",
