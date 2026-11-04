@@ -2,6 +2,8 @@
 
 The public package is published only from a version tag after tests and package review. The current npm `alpha` release remains `0.2.0-alpha.6` until a later tag succeeds.
 
+The alpha.9 tag failed npm staging authorization and predates the canonical IPv6 source correction. Do not approve or publish alpha.9. Alpha.10 is the next reviewed candidate; do not create its immutable tag until the package-side trusted publisher has been inspected and corrected if needed.
+
 ## First-time trusted publisher setup
 
 In npm package settings for `@network-decode/node-guard`, add a GitHub Actions trusted publisher with these exact values:

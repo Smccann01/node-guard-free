@@ -1,6 +1,6 @@
 # Node Guard Free
 
-> Development branch note: the `0.2.0-alpha.8` source adds experimental identity-scoped policy v2 modules. The public npm `alpha` release remains `0.2.0-alpha.6` until the new modules pass integration and package review. See [identity scopes v2](IDENTITY_SCOPES_V2.md) for the trust contract and limits.
+> Development branch note: this alpha.10 staging candidate includes experimental identity-scoped policy v2 modules, a local API candidate, and canonical IPv6 source handling. The public npm `alpha` release remains `0.2.0-alpha.6` until a later package passes staging and maintainer review. See [identity scopes v2](IDENTITY_SCOPES_V2.md) for the trust contract and limits.
 
 Node Guard Free is a local application protection SDK for Node.js. It requires no account, license key, HoneyMesh agent, root access, or subscription. It does not attach XDP, enforce host firewall rules, or participate in Exchange.
 
