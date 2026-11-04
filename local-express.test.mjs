@@ -61,3 +61,18 @@ test('local Express middleware scopes a coordinator restriction to the verified 
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('local Express middleware rejects a malformed coordinator decision', async () => {
+  const app = express();
+  app.use(createLocalExpressNodeGuard({ client: { evaluate: async () => ({ decision: 'BYPASS' }) },
+    getVerifiedSourceIp: () => '8.8.8.8', getVerifiedRouteId: () => 'auth.login' }));
+  app.get('/login', (_request, response) => response.json({ ok: true }));
+  const server = await new Promise((resolve) => { const listener = app.listen(0, '127.0.0.1', () => resolve(listener)); });
+  try {
+    const response = await fetch(`http://127.0.0.1:${server.address().port}/login`);
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), { error: 'node_guard_unavailable' });
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});

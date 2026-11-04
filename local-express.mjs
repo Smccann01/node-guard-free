@@ -10,6 +10,7 @@ export function createLocalExpressNodeGuard({ client, getVerifiedSourceIp, getVe
       const routeId = getVerifiedRouteId(request);
       const result = await client.evaluate(sourceIp, routeId);
       if (!result || !['ALLOW', 'THROTTLE', 'DENY'].includes(result.decision) ||
+          (result.decision === 'ALLOW' && result.restriction != null) ||
           (result.decision !== 'ALLOW' && (!Number.isSafeInteger(result.restriction?.retry_after_seconds) ||
             result.restriction.retry_after_seconds < 1 || result.restriction.retry_after_seconds > 300))) {
         throw new Error('invalid coordinator decision');
