@@ -34,6 +34,8 @@ import { createTrustedSourceResolver } from '@network-decode/node-guard/trusted-
 import { createNextRouteGuard } from '@network-decode/node-guard/next-route';
 import { createVerifiedIdentity, createIdentityGuardV2 } from '@network-decode/node-guard/identity-policy';
 import { diffPolicies } from '@network-decode/node-guard/policy-diff';
+import { createWebhookShield } from '@network-decode/node-guard/webhook-shield';
+if (createWebhookShield({ secret: 'a'.repeat(32) }).status().stateScope !== 'one_process') process.exit(6);
 const source = createTrustedSourceResolver({ trustedProxyIps: ['127.0.0.1'] });
 if (source({ socket: { remoteAddress: '127.0.0.1' }, headers: { 'x-forwarded-for': '1.1.1.1, 8.8.8.8' } }) !== '8.8.8.8') process.exit(1);
 const free = createNodeGuard({ mode: 'enforce', thresholds: { replay_burst: 2 }, canActOnSource: () => true });
@@ -65,7 +67,7 @@ for (const event_id of ['event-003', 'event-004']) v2.record({ schema_version: 2
 if (!v2.isBlocked({ sourceIp: '8.8.8.8', routeId: 'auth.login', identity })) process.exit(5);
 `);
   execFileSync(process.execPath, [smokePath], { stdio: "pipe" });
-  process.stdout.write("Clean tarball install passed: CLI, OBSERVE default, local Guard, v1 and v2 runtimes, replay, policy diff, trusted source, Next route export.\n");
+  process.stdout.write("Clean tarball install passed: CLI, OBSERVE default, local Guard, v1 and v2 runtimes, replay, policy diff, Webhook Shield, trusted source, Next route export.\n");
 } finally {
   await rm(temporaryRoot, { recursive: true, force: true });
 }

@@ -21,6 +21,7 @@
     "IDENTITY_SCOPES_V2.md",
     "LOCAL_API.md",
     "POLICY_STUDIO.md",
+    "WEBHOOK_SHIELD.md",
     "RELEASE.md",
     "REPRODUCE.md",
     "index.mjs",
@@ -48,6 +49,8 @@
     "local-api.d.ts",
     "policy-diff.mjs",
     "policy-diff.d.ts",
+    "webhook-shield.mjs",
+    "webhook-shield.d.ts",
     "bin/nodeguard.mjs",
     "examples/auth-policy.json",
     "examples/auth-observations.json",
@@ -105,6 +108,10 @@
     "./policy-diff": {
       "types": "./policy-diff.d.ts",
       "default": "./policy-diff.mjs"
+    },
+    "./webhook-shield": {
+      "types": "./webhook-shield.d.ts",
+      "default": "./webhook-shield.mjs"
     },
     "./package.json": "./package.json"
   },
