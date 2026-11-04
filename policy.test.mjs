@@ -51,6 +51,17 @@ test("simulation counts independent events only within the correct app, route, a
   assert.throws(() => simulatePolicyV1(policy, [event("event-007", { observed_at: "2026-11-03T18:00:01Z" })], { at }), /after simulation time/);
 });
 
+test("simulation counts equivalent IPv6 spellings under one canonical source", () => {
+  const observations = [
+    event("event-101", { source_ip: "2606:4700:4700:0:0:0:0:1111" }),
+    event("event-102", { source_ip: "2606:4700:4700::1111" }),
+  ];
+  const result = simulatePolicyV1(policy, observations, { at });
+  assert.equal(result.length, 1);
+  assert.equal(result[0].source_ip, "2606:4700:4700::1111");
+  assert.equal(result[0].hit_count, 2);
+});
+
 test("CLI validates and simulates policy files from a clean local input", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "nodeguard-policy-"));
   try {

@@ -24,3 +24,18 @@ test('observe and unsafe sources do not block', () => {
   assert.equal(guard.record({ sourceIp: '8.8.8.8', reasonCode: 'api_probe_burst' }).action, 'observed');
   assert.equal(guard.isBlocked('8.8.8.8'), false);
 });
+
+test('standalone guard uses one IPv6 identity across equivalent spellings and protected sources', () => {
+  const expanded = '2606:4700:4700:0:0:0:0:1111';
+  const compact = '2606:4700:4700::1111';
+  const guard = createNodeGuard({ mode: 'enforce', thresholds: { replay_burst: 2 },
+    canActOnSource: () => true });
+  assert.equal(guard.record({ sourceIp: expanded, reasonCode: 'replay_burst' }).action, 'recorded');
+  assert.equal(guard.record({ sourceIp: compact, reasonCode: 'replay_burst' }).action, 'limit_armed');
+  assert.equal(guard.isBlocked(expanded), true);
+  assert.equal(guard.snapshot()[0].sourceIp, compact);
+  assert.equal(guard.release(expanded), 1);
+  assert.equal(guard.isBlocked(compact), false);
+  const protectedGuard = createNodeGuard({ mode: 'enforce', canActOnSource: (ip) => ip !== compact });
+  assert.equal(protectedGuard.record({ sourceIp: expanded, reasonCode: 'replay_burst' }).reason, 'source_excluded');
+});

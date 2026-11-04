@@ -47,6 +47,11 @@ export function isEligibleSource(address) {
   return typeof address === "string" && eligibleAddress(address);
 }
 
+export function normalizeEligibleSource(address) {
+  if (!isEligibleSource(address)) return null;
+  return isIP(address) === 6 ? new URL(`http://[${address}]/`).hostname.slice(1, -1) : address;
+}
+
 /**
  * A bounded application-level guard. The caller must provide a verified client IP.
  * This does not attach XDP or infer an attacker from arbitrary HTTP traffic.
@@ -93,12 +98,13 @@ export function createGuardCore(options = {}) {
   }
 
   function record({ sourceIp, reasonCode, protocol = "HTTP" } = {}) {
-    if (typeof sourceIp !== "string" || !eligibleAddress(sourceIp)) return { accepted: false, reason: "ineligible_source" };
+    const normalizedSource = normalizeEligibleSource(sourceIp);
+    if (!normalizedSource) return { accepted: false, reason: "ineligible_source" };
     if (!REASON_CODES.includes(reasonCode)) return { accepted: false, reason: "unknown_reason" };
     if (protocol !== "HTTP" && protocol !== "HTTPS") return { accepted: false, reason: "invalid_protocol" };
-    if (!policyAllows(sourceIp)) return { accepted: false, reason: "source_excluded" };
+    if (!policyAllows(normalizedSource)) return { accepted: false, reason: "source_excluded" };
     const at = now();
-    const key = keyFor(reasonCode, sourceIp);
+    const key = keyFor(reasonCode, normalizedSource);
     let entry = state.get(key);
     if (!entry) {
       if (state.size >= maxSources) prune(at);
@@ -116,7 +122,7 @@ export function createGuardCore(options = {}) {
     entry.reportedUntil = at + windowMs;
     if (mode === "enforce") entry.blockedUntil = at + blockMs;
     const decision = Object.freeze({
-      sourceIp, reasonCode, protocol, hitCount: entry.hits.length,
+      sourceIp: normalizedSource, reasonCode, protocol, hitCount: entry.hits.length,
       observedAt: new Date(at).toISOString(),
       action: mode === "enforce" ? "limit_armed" : "observed",
       expiresAt: mode === "enforce" ? new Date(entry.blockedUntil).toISOString() : null,
@@ -126,11 +132,12 @@ export function createGuardCore(options = {}) {
   }
 
   function restriction(sourceIp) {
-    if (mode !== "enforce" || typeof sourceIp !== "string" || !eligibleAddress(sourceIp) || !policyAllows(sourceIp)) return null;
+    const normalizedSource = normalizeEligibleSource(sourceIp);
+    if (mode !== "enforce" || !normalizedSource || !policyAllows(normalizedSource)) return null;
     const at = now();
     let blockedUntil = 0;
     for (const reasonCode of REASON_CODES) {
-      blockedUntil = Math.max(blockedUntil, state.get(keyFor(reasonCode, sourceIp))?.blockedUntil ?? 0);
+      blockedUntil = Math.max(blockedUntil, state.get(keyFor(reasonCode, normalizedSource))?.blockedUntil ?? 0);
     }
     if (blockedUntil <= at) return null;
     return { expiresAt: new Date(blockedUntil).toISOString(), retryAfterSeconds: Math.ceil((blockedUntil - at) / 1_000) };
@@ -141,8 +148,10 @@ export function createGuardCore(options = {}) {
   }
 
   function release(sourceIp) {
+    const normalizedSource = normalizeEligibleSource(sourceIp);
+    if (!normalizedSource) return 0;
     let removed = 0;
-    for (const reasonCode of REASON_CODES) removed += Number(state.delete(keyFor(reasonCode, sourceIp)));
+    for (const reasonCode of REASON_CODES) removed += Number(state.delete(keyFor(reasonCode, normalizedSource)));
     return removed;
   }
 
