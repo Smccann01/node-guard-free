@@ -4,9 +4,9 @@ import { simulatePolicyV1, validatePolicyV1 } from "../policy.mjs";
 import { simulateIdentityPolicyV2, validateIdentityPolicyV2 } from "../identity-policy.mjs";
 import { replayIdentityPolicyV2, replayPolicyV1 } from "../replay-policy.mjs";
 import { comparePolicySimulation, diffPolicies } from "../policy-diff.mjs";
-import { checkBuilderProject, initBuilderProject } from "../builder-kit.mjs";
+import { checkBuilderProject, initBuilderProject, listBuilderTemplates, writeBuilderReview } from "../builder-kit.mjs";
 
-const usage = "Usage: nodeguard builder init <directory> | nodeguard builder check <directory> | nodeguard init [--output <policy.json>] | nodeguard doctor [policy.json] | nodeguard policy validate <policy.json> | nodeguard policy diff <current-policy.json> <proposed-policy.json> | nodeguard policy compare <current-policy.json> <proposed-policy.json> <observations.json> --at <UTC timestamp> [--redact] | nodeguard policy test <policy.json> <observations.json> --at <UTC timestamp> | nodeguard replay <policy.json> <observations.json> --at <UTC timestamp> [--protected <source-ips.json>] [--redact] | nodeguard inspect <policy.json> | nodeguard export <policy.json> --output <file>";
+const usage = "Usage: nodeguard builder templates | nodeguard builder init <directory> [--template login-abuse|api-probing|webhook-replay|tenant-api] | nodeguard builder check <directory> | nodeguard builder review <directory> --output <review.json> | nodeguard init [--output <policy.json>] | nodeguard doctor [policy.json] | nodeguard policy validate <policy.json> | nodeguard policy diff <current-policy.json> <proposed-policy.json> | nodeguard policy compare <current-policy.json> <proposed-policy.json> <observations.json> --at <UTC timestamp> [--redact] | nodeguard policy test <policy.json> <observations.json> --at <UTC timestamp> | nodeguard replay <policy.json> <observations.json> --at <UTC timestamp> [--protected <source-ips.json>] [--redact] | nodeguard inspect <policy.json> | nodeguard export <policy.json> --output <file>";
 const examplePolicy = new URL("../examples/auth-policy.json", import.meta.url);
 
 async function readJson(path) {
@@ -20,16 +20,25 @@ function validatePolicy(input) {
 }
 
 async function main(args) {
-  if (args[0] === "builder" && args.length === 3) {
-    if (args[1] === "init") {
-      const result = await initBuilderProject(args[2]);
+  if (args[0] === "builder") {
+    if (args.length === 2 && args[1] === "templates") {
+      process.stdout.write(`${JSON.stringify(listBuilderTemplates(), null, 2)}\n`);
+      return;
+    }
+    if (args[1] === "init" && (args.length === 3 || (args.length === 5 && args[3] === "--template"))) {
+      const result = await initBuilderProject(args[2], { template: args[4] });
       process.stdout.write(`Created local Builder project: ${result.directory}\nFiles: ${result.files.join(', ')}\n`);
       return;
     }
-    if (args[1] === "check") {
+    if (args.length === 3 && args[1] === "check") {
       process.stdout.write(`${JSON.stringify(await checkBuilderProject(args[2]), null, 2)}\n`);
       return;
     }
+    if (args.length === 5 && args[1] === "review" && args[3] === "--output") {
+      process.stdout.write(`${JSON.stringify(await writeBuilderReview(args[2], args[4]), null, 2)}\n`);
+      return;
+    }
+    throw new Error(usage);
   }
   if (args[0] === "init" && (args.length === 1 || (args.length === 3 && args[1] === "--output"))) {
     const output = args.length === 3 ? args[2] : "nodeguard.policy.json";

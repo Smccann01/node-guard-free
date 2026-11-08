@@ -59,7 +59,7 @@ This package stores no request bodies, tokens, or passwords in the standalone en
 
 ## Commands
 
-- Source candidate only: `nodeguard builder init <directory>` and `nodeguard builder check <directory>` create and review a local synthetic project. See [Builder starter kit](BUILDER.md). These commands are not in the published alpha.11 package.
+- Source candidate only: `nodeguard builder templates`, `nodeguard builder init <directory> [--template login-abuse|api-probing|webhook-replay|tenant-api]`, `nodeguard builder check <directory>`, and `nodeguard builder review <directory> --output <review.json>` create and review a local synthetic project. See [Builder starter kit](BUILDER.md). These commands are not in the published alpha.11 package.
 - `nodeguard init [--output file]`
 - `nodeguard doctor [policy.json]`
 - `nodeguard policy validate policy.json`

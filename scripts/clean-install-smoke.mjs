@@ -24,6 +24,19 @@ try {
   if (doctor.source_trust !== "not checked" || doctor.state_scope !== "one_process") {
     throw new Error("clean install diagnostics overstated the deployment scope");
   }
+  const builderRoot = path.join(appRoot, "builder-login");
+  const templates = JSON.parse(execFileSync(cli, ["builder", "templates"], { encoding: "utf8" }));
+  if (templates.length !== 4) throw new Error("Builder templates are missing from the packed CLI");
+  execFileSync(cli, ["builder", "init", builderRoot, "--template", "login-abuse"], { stdio: "pipe" });
+  const builderCheck = JSON.parse(execFileSync(cli, ["builder", "check", builderRoot], { encoding: "utf8" }));
+  if (!builderCheck.unchanged_control_evidence || builderCheck.review.activation !== "none") {
+    throw new Error("Builder package check did not preserve the control source");
+  }
+  const reviewPath = path.join(appRoot, "builder-review.json");
+  execFileSync(cli, ["builder", "review", builderRoot, "--output", reviewPath], { stdio: "pipe" });
+  const reviewText = await readFile(reviewPath, "utf8");
+  if (reviewText.includes("8.8.8.8") || reviewText.includes("1.1.1.1") ||
+      JSON.parse(reviewText).activation !== "none") throw new Error("Builder report exposed a source or activation");
 
   const smokePath = path.join(appRoot, "smoke.mjs");
   await writeFile(smokePath, `
@@ -76,7 +89,7 @@ if (!v2.isBlocked({ sourceIp: '8.8.8.8', routeId: 'auth.login', identity })) pro
       workflowOutput.includes("8.8.8.8")) {
     throw new Error("clean package security tools workflow failed");
   }
-  process.stdout.write("Clean tarball install passed: CLI, OBSERVE default, local Guard, v1 and v2 runtimes, replay, policy diff, Webhook Shield, trusted source, Next route export.\n");
+  process.stdout.write("Clean tarball install passed: CLI, OBSERVE default, Builder templates and review, local Guard, v1 and v2 runtimes, replay, policy diff, Webhook Shield, trusted source, Next route export.\n");
 } finally {
   await rm(temporaryRoot, { recursive: true, force: true });
 }
