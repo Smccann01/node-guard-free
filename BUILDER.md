@@ -13,7 +13,7 @@ node bin/nodeguard.mjs builder check my-security-tool
 node bin/nodeguard.mjs builder review my-security-tool --output my-review.json
 ```
 
-From a package release that includes Builder, use `npx nodeguard builder ...` instead. The published `0.2.0-alpha.11` package does **not** include these new commands.
+With the `0.2.0-alpha.12` package after its release, use `npx nodeguard builder ...` instead. The older `0.2.0-alpha.11` package does **not** include these commands.
 
 `init` creates a new directory and refuses to overwrite an existing one. The default `login-abuse` template contains a selected source and an unaffected control source. Use `--template api-probing` or `--template webhook-replay` for those application event types, or `--template tenant-api` to compare two synthetic tenants behind the same source IP. The tenant template uses the v2 policy model and requires application-verified tenant identity when integrated into a real service. The webhook template assumes your application has already verified the signature and identified a replay; it does not perform signature verification. All templates use synthetic fixtures and start with an OBSERVE policy.
 
