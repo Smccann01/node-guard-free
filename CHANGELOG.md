@@ -1,5 +1,14 @@
 # Node Guard Free changes
 
+## 0.2.0-alpha.12 (release candidate)
+
+- Add four local Builder templates: login abuse, API probing, webhook replay response, and tenant API isolation with the v2 identity policy model.
+- Add an unaffected control fixture to each template and report whether a proposed policy changes the selected decision while preserving the control.
+- Add `builder review` to save a redacted local change record with canonical policy fingerprints and explicit unverified source, identity, and production gates. It never activates enforcement.
+- Reject symlinked Builder fixture files and refuse to overwrite a project or report. Include Builder in clean package smoke checks.
+
+Builder remains a local simulation tool. The SDK still has one-process state and no HoneyMesh host authority.
+
 ## 0.2.0-alpha.11 (release candidate)
 
 - Add deterministic local replay of ordered v1 and synthetic v2 policy observations. Timelines show decision transitions and bounded state without network or host enforcement. ENFORCE CLI replay requires an explicit protected-source file.

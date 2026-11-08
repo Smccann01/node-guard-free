@@ -1,6 +1,6 @@
 # Node Guard Free
 
-> The public `0.2.0-alpha.11` release combines [local replay](REPLAY.md), read-only [Policy Studio](POLICY_STUDIO.md), and customer-controlled [Webhook Shield](WEBHOOK_SHIELD.md). Its npm `alpha` tag, registry signature, provenance, and clean install were verified. The default `latest` tag remains `0.2.0-alpha.6`. See [identity scopes v2](IDENTITY_SCOPES_V2.md) for the trust contract and limits.
+> This `0.2.0-alpha.12` release candidate adds local Builder projects and review reports to the previously published replay, Policy Studio, and Webhook Shield tools. Verify npm publication and provenance before treating alpha.12 as available. The default `latest` tag remains `0.2.0-alpha.6`. See [identity scopes v2](IDENTITY_SCOPES_V2.md) for the trust contract and limits.
 
 Node Guard Free is a local application protection SDK for Node.js. It requires no account, license key, HoneyMesh agent, root access, or subscription. It does not attach XDP, enforce host firewall rules, or participate in Exchange.
 
@@ -19,7 +19,7 @@ Node Guard Free is a local application protection SDK for Node.js. It requires n
 Install the published alpha with:
 
 ```sh
-npm install @network-decode/node-guard@0.2.0-alpha.11
+npm install @network-decode/node-guard@0.2.0-alpha.12
 npx nodeguard init
 npx nodeguard doctor nodeguard.policy.json
 npx nodeguard policy validate nodeguard.policy.json
@@ -59,7 +59,7 @@ This package stores no request bodies, tokens, or passwords in the standalone en
 
 ## Commands
 
-- Source candidate only: `nodeguard builder templates`, `nodeguard builder init <directory> [--template login-abuse|api-probing|webhook-replay|tenant-api]`, `nodeguard builder check <directory>`, and `nodeguard builder review <directory> --output <review.json>` create and review a local synthetic project. See [Builder starter kit](BUILDER.md). These commands are not in the published alpha.11 package.
+- `nodeguard builder templates`, `nodeguard builder init <directory> [--template login-abuse|api-probing|webhook-replay|tenant-api]`, `nodeguard builder check <directory>`, and `nodeguard builder review <directory> --output <review.json>` create and review a local synthetic project. See [Builder starter kit](BUILDER.md). These commands require alpha.12 or a newer package.
 - `nodeguard init [--output file]`
 - `nodeguard doctor [policy.json]`
 - `nodeguard policy validate policy.json`
